@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 512" role="img" aria-label="OS Genie logo">
+<title>OS Genie</title>
+<path d="M0 0H1024V512H0Z" fill="#2E1065"/>
+<g id="icon">
+<circle cx="256" cy="256" r="110" fill="#10B981"/>
+<path d="M202 257L247 302L314 218" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M372 90Q382 132 424 142Q382 152 372 194Q362 152 320 142Q362 132 372 90Z" fill="#8B5CF6"/>
+<path d="M142 336Q149 361 174 368Q149 375 142 400Q135 375 110 368Q135 361 142 336Z" fill="#8B5CF6"/>
+<path d="M380 350Q385 367 402 372Q385 377 380 394Q375 377 358 372Q375 367 380 350Z" fill="#F59E0B"/>
+</g>
+<g id="wordmark">
+<text x="490" y="296" font-family="Helvetica, Arial, sans-serif" font-size="112" font-weight="700" letter-spacing="-2" fill="#F5F3FF">OS Genie</text>
+</g>
+</svg>

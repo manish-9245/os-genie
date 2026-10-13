@@ -1,0 +1,83 @@
+---
+name: os-genie-issue-triage
+description: Score and select quality, maintainer-approved GitHub issues worth fixing. Use when asked to find a good first issue, triage issues, vet an issue before coding, or decide which issue to work on.
+license: MIT
+metadata:
+  version: "1.0"
+  pipeline-stage: "1-triage"
+  next-skill: os-genie-fix-pr
+---
+
+# OSS Issue Triage
+
+**Pick issues a maintainer is likely to merge, not just issues labelled easy.**
+
+## When to use
+
+- User asks to find / pick / vet / triage a GitHub issue to fix
+- Before any coding starts on an open-source issue
+- To rank 3+ candidate issues and recommend exactly one
+
+## Non-goal
+
+Do not write code in this skill. Output is a ranked recommendation + claim comment draft. Coding belongs to `os-genie-fix-pr`.
+
+## Workflow
+
+### 1. Collect candidates (labels + text, not labels alone)
+
+Only ~40% of repos have label-discoverable easy issues, so labels alone miss most good work (GitHub good-first-issues ML launch, 2020). Query both:
+
+1. Label search first: `good first issue`, `help wanted`, `documentation`, plus repo synonyms (`beginner friendly`, `easy bug fix`, `low-hanging-fruit`, `good-first-issue`, `first-timers-only`). See `references/gh-queries.md`.
+2. Text search for approval + scope signals: `maintainer replied`, `confirmed`, `triaged`, `accepted`, `milestone:*`, `reproducible`, `acceptance criteria`.
+3. Gather 5-10 candidates max. For each, record: number, title, labels, age, assignees, comment count, last maintainer reply date, linked PRs, body length.
+
+Stop when you have 5 candidates or 2 pages of search results, whichever comes first.
+
+### 2. Hard-reject filter (any one = drop)
+
+- Labelled `wontfix`, `invalid`, `duplicate`, `needs-info` / `question` with no maintainer follow-up
+- Already assigned, or has an open linked PR that is green/active (<14 days)
+- No maintainer comment in >180 days AND no `triaged`/`confirmed`/`accepted` label
+- Pure discussion / roadmap / RFC with no agreed scope ("we should maybe…", no decision comment)
+- Security report that asks for private disclosure (route to SECURITY.md instead, never triage publicly)
+
+Completion criterion: every surviving candidate has zero hard-reject flags, stated explicitly.
+
+### 3. Score survivors 0-100
+
+Score each survivor with `references/scoring-rubric.md` (weights: maintainer approval 35, scope clarity 25, freshness/activity 20, low collision risk 10, evidence quality 10). You may use `scripts/score_issue.py` to compute it deterministically from `gh` JSON.
+
+```bash
+gh issue view <number> --repo <owner/repo> --json number,title,labels,assignees,comments,createdAt,updatedAt,body,state,milestone > issue.json
+python3 scripts/score_issue.py issue.json
+```
+
+Completion criterion: every candidate has a numeric score with one-line justification per dimension.
+
+### 4. Recommend exactly one
+
+Pick the highest score. Tie-break: fresher maintainer reply wins, then smaller scope, then older issue age (stale-but-confirmed loses to fresh-and-confirmed).
+
+Report:
+
+1. Winner: `owner/repo#number` + title + score breakdown
+2. Why it is mergeable: quote the maintainer approval signal (comment link or label)
+3. Claim-comment draft (one short comment asking to be assigned, referencing the approval)
+4. Runner-up + single reason it lost
+5. Dropped candidates: one-line reject reason each
+
+If no candidate scores >= 60, say so plainly and recommend asking a scope-clarifying question (via `os-genie-maintainer-comms`) instead of coding.
+
+## Rules
+
+- Quote maintainer approval; never assert "approved" without a comment, label, or milestone as evidence.
+- Prefer issues with reproduction steps or acceptance criteria over vaguer higher-voted ones.
+- Check duplicates before recommending: `gh search issues --repo <owner/repo> <keywords>`.
+- Keep communication public on the issue; no DM asks.
+
+## References
+
+- Full rubric: `references/scoring-rubric.md`
+- Search recipes: `references/gh-queries.md`
+- Data sources: `references/evidence.md`

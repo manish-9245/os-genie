@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 380 380" role="img" aria-label="OS Genie icon">
+<title>OS Genie icon</title>
+<rect x="60" y="60" width="380" height="380" rx="84" fill="#0F172A"/>
+<g id="icon">
+<path d="M 334 178 A 110 110 0 1 0 334 334" fill="none" stroke="#8B5CF6" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 282 312 H 334" fill="none" stroke="#8B5CF6" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 232 216 L 292 241" fill="none" stroke="#F1F5F9" stroke-width="14" stroke-linecap="round"/>
+<path d="M 232 266 L 292 241" fill="none" stroke="#F1F5F9" stroke-width="14" stroke-linecap="round"/>
+<circle cx="232" cy="216" r="22" fill="#10B981"/>
+<circle cx="232" cy="266" r="22" fill="#10B981"/>
+<circle cx="292" cy="241" r="24" fill="#F59E0B"/>
+</g>
+</svg>
