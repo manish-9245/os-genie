@@ -12,12 +12,9 @@
 
 Four portable [Agent Skills](https://agentskills.io) that take you from "where do I contribute?" to merged pull request. Data-backed, polyglot, and strict about the things maintainers actually merge on: small diffs, green CI, quoted approval, and evidence.
 
-```
-os-genie-repo-finder  →  os-genie-issue-triage  →  os-genie-fix-pr  →  os-genie-maintainer-comms
-   (0) discover            (1) triage               (2) implement          (3) communicate
-   repos that              ONE approved             smallest green         doubts, reviews,
-   still merge             issue worth fixing       PR, tests+proof       bumps, follow-ups
-```
+<p align="center">
+  <img src="assets/pipeline.svg" alt="OS Genie pipeline: discover (repo-finder) to triage (issue-triage) to implement (fix-pr) to communicate (maintainer-comms) to merged PR">
+</p>
 
 ## Install (30 seconds)
 
