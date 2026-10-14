@@ -37,6 +37,10 @@ Each skill chains to the next through `metadata.prev-skill` / `next-skill`. Full
 
 ## Quick demo
 
+<p align="center">
+  <img src="assets/demo.gif" alt="Animated demo: OS Genie searching repos and issues in parallel, scoring one 100 RECOMMEND, posting a trace-first claim, opening a PR with green CI, and merging, all inside OpenCode">
+</p>
+
 ```bash
 # 1. Pick the issue (example: acme/widgets#412)
 gh issue view 412 --repo acme/widgets \
