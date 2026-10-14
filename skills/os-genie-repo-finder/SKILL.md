@@ -3,7 +3,7 @@ name: os-genie-repo-finder
 description: Find quality open-source repos where a first contribution is likely to get merged. Use when asked to find repos to contribute to, evaluate a repo before investing, build a contribution shortlist, or check merge chances.
 license: MIT
 metadata:
-  version: "1.0"
+  version: "1.1"
   pipeline-stage: "0-discover"
   next-skill: os-genie-issue-triage
 ---
@@ -35,8 +35,12 @@ Gather 5-8 candidates. Then score: never recommend unscored.
 - Open PRs rotting: median open-PR age >60d with no maintainer comment
 - CONTRIBUTING missing AND README setup insufficient to build (<30 min attempt fails)
 - Single-maintainer bottleneck with bus factor 1 + no merges in 60d
+- Contribution friction: issue threads show org "blocked <user>" or deleted
+  comments, the repo page gates PRs ("Only collaborators can create PRs"),
+  or CONTRIBUTING forbids asking for assignment (pallets/flask#6146 pattern,
+  Oct 2026: prior blocks plus a closed PR path made every claim unmergeable)
 
-Completion criterion: every survivor passes all five, stated explicitly.
+Completion criterion: every survivor passes all six, stated explicitly.
 
 ### 3. Score survivors 0-100
 

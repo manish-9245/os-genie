@@ -12,7 +12,7 @@ Empirical study of failed agentic PRs (33,596 PRs, 600 manually annotated reject
 
 ## Maintainer approval drives scope correctness
 
-Same failure taxonomy: incorrect implementation (19), wrong task descriptions (1%), non-functional PRs (2%), wrong branch. These cluster where scope was never maintainer-confirmed. GitHub's own good-first-issues launch (Gazit, 2020) shows labels alone cover only ~40% of repos, so text signals matter; Tan et al. (ESEC/FSE 2020) show issue quality beats label presence for newcomer success. Drives: 35 of 100 triage points on quoted approval, hard-reject on stale-unconfirmed issues, Template A scope questions.
+Same failure taxonomy: incorrect implementation (19), wrong task descriptions (1%), non-functional PRs (2%), wrong branch. These cluster where scope was never maintainer-confirmed. GitHub's own good-first-issues launch (Gazit, 2020) shows labels alone cover only ~40% of repos, so text signals matter; Tan et al. (ESEC/FSE 2020) show issue quality beats label presence for newcomer success. Drives: 35 of 100 triage points on quoted approval, hard-reject on stale-unconfirmed issues, Template A/I scope questions.
 
 ## Repo health drives follow-through
 
@@ -21,6 +21,10 @@ Weights mirror `gh-analyzer` (momentum 30, bus factor via HHI 25, issue resoluti
 ## Commit quality
 
 Conventional Commits 1.0.0 (type/scope/!/body/trailers); Beams' seven rules adapted for the prefix era; type-confusion guidance from ICSE 2025 (Zeng et al.: CCS-type confusion is developers' most common problem, from 194 GitHub issues and 100 Stack Overflow questions); adoption context (Kong et al. 2025: 360 of 381 sampled JS projects contain CC commits). Full detail: `skills/os-genie-fix-pr/references/commit-guide.md`.
+
+## Human-sounding first contact prevents blocks
+
+A real 2026-10-14 incident: 13 near-identical claim comments in 24h got an account blocked by the pallets org on `pallets/flask#6146` (comment deleted, PR path closed), matching two prior blocks on the same thread. Volume plus template sameness is a bot signature even when each comment is individually polite. Pangram's signs-of-AI study (millions of docs: em dashes 10x, list-instead-of-prose 9x, Rule of Three 4x, not-just-X-but-Y 3x), Wikipedia's Signs of AI writing field guide, the ai-writing-markers dataset, and 2026 humanizing guides converge on the same markers: overused vocabulary (delve, leverage, seamless), filler shells ("it's worth noting", "moreover" openers), uniform sentence rhythm (low burstiness), hedging as default register, and generic claims with no particulars. Drives: the claim-guide block-risk check and velocity caps (5/day global, 2/org, 60 min spacing), the -20/-10 block-risk score penalty, trace-first Templates H/I (file:line, root cause with evidence, rejected alternative, binary question), and the tone-rules word-level scan. No single marker proves anything; density across categories is the signal, and the fix is specific knowledge only someone who read the code can state.
 
 ## Honesty note
 

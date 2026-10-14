@@ -3,7 +3,7 @@ name: os-genie-issue-triage
 description: Score and select quality, maintainer-approved GitHub issues worth fixing. Use when asked to find a good first issue, triage issues, vet an issue before coding, or decide which issue to work on.
 license: MIT
 metadata:
-  version: "1.0"
+  version: "1.1"
   pipeline-stage: "1-triage"
   next-skill: os-genie-fix-pr
 ---
@@ -63,11 +63,20 @@ Report:
 
 1. Winner: `owner/repo#number` + title + score breakdown
 2. Why it is mergeable: quote the maintainer approval signal (comment link or label)
-3. Claim-comment draft (one short comment asking to be assigned, referencing the approval)
+3. Claim-comment draft per `references/claim-guide.md` (block-risk check + velocity caps + homework-first anatomy; scope question instead of a claim when approval is missing)
 4. Runner-up + single reason it lost
 5. Dropped candidates: one-line reject reason each
 
 If no candidate scores >= 60, say so plainly and recommend asking a scope-clarifying question (via `os-genie-maintainer-comms`) instead of coding.
+
+### 5. Block-risk + velocity gate (mandatory before posting anything)
+
+Run `references/claim-guide.md` section 1 (four checks: approval, timeline,
+contribution path, fresh collision) and section 2 (5/day global, 2/org,
+60 min spacing, halve caps for new accounts). Any FAIL means do not post a
+claim. Post a scope question or drop the issue. Never bypass this gate for
+a "small docs fix": small scope does not waive approval, and the pallets
+2026-10-14 block was a one-line docs claim with zero approval.
 
 ## Rules
 
@@ -79,5 +88,6 @@ If no candidate scores >= 60, say so plainly and recommend asking a scope-clarif
 ## References
 
 - Full rubric: `references/scoring-rubric.md`
+- Claim guide (block-risk, velocity, human wording): `references/claim-guide.md`
 - Search recipes: `references/gh-queries.md`
 - Data sources: `references/evidence.md`

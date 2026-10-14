@@ -22,7 +22,7 @@ python3 skills/os-genie-repo-finder/scripts/score_repo.py --repo acme/widgets \
   --released-days-ago 20 --docs 3
 ```
 
-Worked result: `{"score": 92, "verdict": "FIRST-PICK"}`. Below 60 means SKIP: widen the frame (adjacent language, larger org, docs-first repos) instead of forcing a bad pick. Hard-rejects (no OSI license, dead 90d, rotting PRs, unbuildable setup, bus-factor-1 with no merges) drop a repo before scoring.
+Worked result: `{"score": 92, "verdict": "FIRST-PICK"}`. Below 60 means SKIP: widen the frame (adjacent language, larger org, docs-first repos) instead of forcing a bad pick. Hard-rejects (no OSI license, dead 90d, rotting PRs, unbuildable setup, bus-factor-1 with no merges, contribution friction such as prior blocks or collaborator-only PRs) drop a repo before scoring.
 
 ## Stage 1: Triage (os-genie-issue-triage)
 
@@ -41,7 +41,7 @@ Worked result for `acme/widgets#412` ("panic on empty config", `confirmed` label
 approval 35 + clarity 25 + freshness 20 + collision 10 + evidence 10 = 100 → RECOMMEND
 ```
 
-Output is the winner, its score breakdown, a claim-comment draft, the runner-up with its losing reason, and one-line reject reasons for the rest. Below 60 means ASK-FIRST: draft a scope question with os-genie-maintainer-comms Template A instead of coding.
+Output is the winner, its score breakdown, a claim-comment draft per `references/claim-guide.md` (block-risk check, velocity caps, trace-first wording), the runner-up with its losing reason, and one-line reject reasons for the rest. The block-risk penalty (-20 for prior blocks or a closed PR path, -10 for zero approval with a pile-on) can drop an issue regardless of its base score. Below 60 means ASK-FIRST: draft a scope question with os-genie-maintainer-comms Template I instead of coding.
 
 ## Stage 2: Implement (os-genie-fix-pr)
 
@@ -69,7 +69,7 @@ Commits follow the state-of-the-art guide (`references/commit-guide.md`): Conven
 
 Goal: every reply easy to say yes to.
 
-- Classify first: scope doubt (Template A), agree (B), clarify (C), disagree with data and deference (D), big-ask split proposal (E), 7-day bump (F), graceful close (G).
+- Classify first: scope doubt (Template A), agree (B), clarify (C), disagree with data and deference (D), big-ask split proposal (E), 7-day bump (F), graceful close (G), first-contact claim with a code trace (H), scope question instead of a claim (I).
 - Address every comment 1:1 with commit hashes, push fixes to the same branch, re-run green, explicitly re-request review.
 - Your SLA is 48h on actionable feedback; their silence gets one bump per 7 days, max two, then you log the repo as unresponsive (which feeds future Stage 0 scoring).
 

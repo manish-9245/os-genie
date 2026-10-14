@@ -50,6 +50,27 @@ Rationale: GoodFirstIssue maintainer guidance, recent commits, replies, and tria
 - 5: partial (version xor logs)
 - 0: neither
 
+## 6. Block-risk penalty: 0 to -20 (applied after the sum)
+
+Subtract from the 0-100 total, floor at 0. This penalty exists because a
+high-scoring issue you cannot touch scores zero in practice.
+
+- -20: issue timeline shows org "blocked <user>" or "deleted a comment"
+  events (2 or more), or the repo page states "Only collaborators can
+  create PRs", or CONTRIBUTING forbids asking for assignment. Drop the
+  issue regardless of the pre-penalty total.
+- -10: zero maintainer approval combined with 5 or more "work on this?"
+  comments, or an undecided maintainer question still open in thread.
+  Treat as ask-first, never claim-first.
+- 0: none of the above.
+
+Worked penalty example: `pallets/flask#6146` (Oct 2026) looked small (one
+docs link) but had zero approval, an open maintainer question, two prior
+blocks with deletions on the same thread, and a collaborators-only PR gate.
+Pre-penalty scope looked passable; post-penalty it is -20, hard drop. The
+claim was posted anyway and the account was blocked with the comment
+deleted.
+
 ## Worked example
 
 `acme/widgets#412`: "panic on empty config", labelled `help wanted` + `confirmed`, maintainer comment 6d ago ("repro confirmed, PR welcome"), repro + expected/actual present, no assignee, version + stack trace included:

@@ -31,10 +31,10 @@ That installs all four skills into your agent (`claude-code`, `cursor`, `opencod
 
 | Stage | Skill | Question it answers | Merge gate |
 |---|---|---|---|
-| 0. Discover | `os-genie-repo-finder` | Which repos merge first-timer PRs? | Health score ≥ 60 (first-pick ≥ 75), 5 hard-rejects |
-| 1. Triage | `os-genie-issue-triage` | Which ONE issue is worth fixing? | Score ≥ 60 with quoted maintainer approval |
+| 0. Discover | `os-genie-repo-finder` | Which repos merge first-timer PRs? | Health score ≥ 60 (first-pick ≥ 75), 6 hard-rejects |
+| 1. Triage | `os-genie-issue-triage` | Which ONE issue is worth fixing? | Score ≥ 60 with quoted maintainer approval, block-risk check, trace-first claim draft |
 | 2. Implement | `os-genie-fix-pr` | What is the smallest green PR a maintainer can merge? | Green CI, <200 lines, YAGNI, tests, evidence, secrets sweep |
-| 3. Communicate | `os-genie-maintainer-comms` | What do I say when they reply, or go silent? | Templates A–G, 48h reply SLA, polite bumps |
+| 3. Communicate | `os-genie-maintainer-comms` | What do I say when they reply, or go silent? | Templates A–I, 48h reply SLA, polite bumps, word-level human scan |
 
 Each skill chains to the next through `metadata.prev-skill` / `next-skill`. Full walkthrough with a worked example: [docs/pipeline.md](docs/pipeline.md).
 

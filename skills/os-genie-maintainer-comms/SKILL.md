@@ -3,7 +3,7 @@ name: os-genie-maintainer-comms
 description: Draft maintainer replies, scope questions, review responses, and follow-up fixes. Use when a maintainer commented on your issue or PR, you need to ask a doubt, address review feedback, bump a stale thread, or propose a follow-up.
 license: MIT
 metadata:
-  version: "1.0"
+  version: "1.1"
   pipeline-stage: "3-communicate"
   prev-skill: os-genie-fix-pr
 ---
@@ -40,9 +40,13 @@ Maintainers face overwhelm, volunteer time, and burnout; they protect the codeba
 | Review: disagree | Template D: reasons + data, defer to maintainer, offer alternative |
 | Review: big ask / scope growth | Template E: propose follow-up PR split |
 | Silence ≥7d, CI green, reviewable | Template F: single polite bump with status |
-| Silence ≥21d or explicit wontfix | Thank, close gracefully, log learning, do not argue |
+| Silence ≥21d or explicit wontfix | Template G: thank, close, log, do not argue |
+| First contact, approval quoted, block-risk passed | Template H: homework-first claim ending in a question |
+| No approval yet or block-risk soft-fail | Template I: scope question, never a claim |
 
-Full templates: `references/response-templates.md`.
+Full templates: `references/response-templates.md`. First-contact wording
+rules (banned openers, no sentence reuse, artifact required): `references/tone-rules.md`
+plus triage `references/claim-guide.md` velocity caps.
 
 ### 2. Draft the reply
 
@@ -64,7 +68,7 @@ Completion criterion: draft covers all reviewer points 1:1 and ends with an expl
 
 ## Anti-patterns (do not do)
 
-Arguing in review · going silent >48h on actionable feedback · force-pushing away review history mid-review · pinging multiple maintainers · opening duplicate issues to get attention · claiming urgency on volunteer time.
+Arguing in review · going silent >48h on actionable feedback · force-pushing away review history mid-review · pinging multiple maintainers · opening duplicate issues to get attention · claiming urgency on volunteer time · posting near-identical first-contact comments across repos · re-commenting after a deletion or block.
 
 ## References
 
