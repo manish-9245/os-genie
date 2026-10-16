@@ -4,7 +4,8 @@
   ledger.py sync [REPO#N ...]          pull live state of every PR you authored since the hunt start (~/oss-genie/config.json "since", default 2026-10-13)
   ledger.py register REPO#N [--clone PATH] [--evidence PATH] [--issue N] [--owner-action TEXT]
   ledger.py note REPO#N "text"         append a dated note (also written to notes.md)
-  ledger.py site                       build ~/oss-genie/site/index.html
+  ledger.py site                       build the local site in ~/oss-genie/site (index.html, style.css, app.js, data.json)
+  ledger.py publish [--deploy]         copy the site into ~/oss-progress-site/dist, and deploy it with wrangler when --deploy is given
   ledger.py serve [port]               serve the site on http://localhost:8787
   ledger.py inbox [--mark]             list what each open PR is waiting on: reviews, comments, CI, conflicts, CLA (writes inbox.md)
   ledger.py cleanup [--apply]          delete local clones ONLY for PRs that are MERGED (verified live)
@@ -180,21 +181,60 @@ def cmd_cleanup(apply):
             shutil.rmtree(p, ignore_errors=True); e["clone"] = ""; e["notes"].append(f"{now()} clone deleted after merge"); freed += int(size)
     if apply: save(d); print(f"freed ~{freed//1024} MB")
 
-def cmd_site():
-    d = load(); SITE.mkdir(exist_ok=True)
+SITE_SRC = pathlib.Path(__file__).resolve().parent.parent / "site"
+PUBLIC_DIR = pathlib.Path.home() / "oss-progress-site"
+
+def waiting_words(e):
+    """Plain, public-safe reasons a PR is waiting on the owner. No paths, no private notes."""
+    out = []
+    if e.get("state") in ("OPEN", "DRAFT"):
+        if e.get("cla") == "unsigned": out.append("CLA to sign")
+        kinds = {it["kind"] for it in e.get("inbox", []) if it["action"] != "READ" and it["kind"] != "cla"}
+        for kind, word in (("changes_requested", "changes requested"), ("inline_review", "review comments to address"), ("review", "review to answer"),
+                           ("comment", "question to answer"), ("ci_failing", "failing checks"), ("merge_conflict", "merge conflict")):
+            if kind in kinds: out.append(word)
+        if e.get("owner_action") and not out: out.append("something I still need to do")
+    return out
+
+def export_rows():
     rows = []
-    for k, e in d["prs"].items():
+    for k, e in d_all().items():
         if not e.get("state"): continue
-        rows.append({"key": k, **{x: e.get(x) for x in ("title", "state", "url", "updated", "size", "cla", "review", "failing", "clone", "evidence", "issue", "reply", "branch")},
-                     "need": needs_you(e), "notes": e.get("notes", [])[-6:]})
-    order = {"OPEN": 0, "DRAFT": 1, "MERGED": 2, "CLOSED": 3}
-    rows.sort(key=lambda r: (0 if r["need"] else 1, order.get(r["state"], 9), r["updated"] or ""), reverse=False)
-    counts = {s: sum(1 for r in rows if r["state"] == s) for s in order}
-    counts["NEED"] = sum(1 for r in rows if r["need"] and r["state"] in ("OPEN", "DRAFT"))
-    tpl = (pathlib.Path(__file__).parent / "site_template.html").read_text()
-    payload = json.dumps({"rows": rows, "counts": counts, "built": now()}).replace("</", "<\\/")
-    (SITE / "index.html").write_text(tpl.replace("/*DATA*/null", payload))
-    print("site built:", SITE / "index.html", counts)
+        repo, n = k.rsplit("#", 1)
+        rows.append({"key": k, "repo": repo, "number": n, "title": e.get("title", ""), "url": e.get("url", ""), "state": e["state"],
+                     "updated": e.get("updated", ""), "size": e.get("size", ""), "cla": e.get("cla", ""), "review": e.get("review", ""),
+                     "failing": e.get("failing", []), "waiting": waiting_words(e)})
+    rows.sort(key=lambda r: r["updated"], reverse=True)
+    counts = {x: sum(1 for r in rows if r["state"] == x) for x in ("OPEN", "DRAFT", "MERGED", "CLOSED")}
+    cfg = HOME / "config.json"
+    since = json.loads(cfg.read_text()).get("since", "2026-10-13") if cfg.exists() else "2026-10-13"
+    label = datetime.date.fromisoformat(since).strftime("%-d %B %Y")
+    return {"rows": rows, "counts": counts, "built": now(), "since_label": label}
+
+def d_all(): return load()["prs"]
+
+def write_site(dest):
+    dest = pathlib.Path(dest); dest.mkdir(parents=True, exist_ok=True)
+    for f in ("index.html", "style.css", "app.js"): shutil.copy(SITE_SRC / f, dest / f)
+    (dest / "data.json").write_text(json.dumps(export_rows(), indent=1))
+    return dest
+
+def cmd_site():
+    dest = write_site(SITE); c = json.loads((dest / "data.json").read_text())["counts"]
+    print("site built:", dest / "index.html", c)
+
+def cmd_publish(deploy):
+    """Copy the same site to ~/oss-progress-site/dist (replacing old files). data.json holds public-safe fields only."""
+    dist = PUBLIC_DIR / "dist"
+    if not PUBLIC_DIR.exists(): sys.exit("~/oss-progress-site not found")
+    for old in dist.glob("*"):
+        shutil.rmtree(old) if old.is_dir() else old.unlink()
+    write_site(dist); print("copied to", dist)
+    if not deploy: print("not deployed. Log in once with: npx wrangler login   then: ledger.py publish --deploy"); return
+    cfg = HOME / "config.json"; env = dict(os.environ)
+    if cfg.exists() and json.loads(cfg.read_text()).get("cloudflare_account_id"): env["CLOUDFLARE_ACCOUNT_ID"] = json.loads(cfg.read_text())["cloudflare_account_id"]
+    r = subprocess.run(["npx", "-y", "wrangler", "deploy"], cwd=PUBLIC_DIR, env=env)
+    sys.exit(r.returncode)
 
 def cmd_serve(port="8787"):
     cmd_site(); print(f"open http://localhost:{port}  (Ctrl+C to stop)")
@@ -208,6 +248,7 @@ def main():
     elif c == "register": cmd_register(a[1:])
     elif c == "note": cmd_note(a[1:])
     elif c == "site": cmd_site()
+    elif c == "publish": cmd_publish("--deploy" in a)
     elif c == "serve": cmd_serve(*a[1:2])
     elif c == "cleanup": cmd_cleanup("--apply" in a)
     elif c == "inbox": cmd_inbox("--mark" in a)

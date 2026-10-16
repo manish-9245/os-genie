@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pull requests I have sent</title>
+<meta name="description" content="A log of the pull requests I have sent to other open source projects, and what happened to each.">
+<link rel="stylesheet" href="style.css">
+<!--
+THESIS: a logbook, not a dashboard. Entries by day, status as a word in the margin, red-pen notes for what I still owe.
+OWN-WORLD: blue-black ink on cool white, one red pen, ruled lists, system serif. Recognisable with the text removed.
+STORY: a stranger sees what was sent, what happened, and what is waiting on me, in ten seconds.
+FIRST VIEWPORT: title, two plain sentences, one counts line, then the red margin notes.
+FORM: dated logbook, grouped by day, status gutter at left.
+-->
+</head>
+<body>
+<a class="skip" href="#log">Skip to the log</a>
+<div class="page">
+  <header>
+    <h1>Pull requests I have sent</h1>
+    <p class="intro">I fix bugs and write docs for other people's open source projects. This is the log of what I sent, and what the maintainers did with it.</p>
+    <p class="counts" id="counts" aria-live="polite"></p>
+  </header>
+
+  <section id="owe" aria-labelledby="owe-h" hidden>
+    <h2 id="owe-h">Still on my list</h2>
+    <ul class="notes" id="notes"></ul>
+  </section>
+
+  <section aria-labelledby="log-h">
+    <h2 id="log-h">The log</h2>
+    <div class="tools">
+      <nav class="filters" aria-label="Show" id="filters"></nav>
+      <p class="search"><label for="q">Find</label> <input id="q" type="search" autocomplete="off" placeholder="a repo or a word"></p>
+    </div>
+    <p class="shown" id="shown" role="status" aria-live="polite"></p>
+    <div id="log"><noscript><p>This page reads its list from a data file with a little JavaScript. Please turn it on, or see my GitHub profile.</p></noscript></div>
+  </section>
+
+  <footer><p id="built"></p></footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
