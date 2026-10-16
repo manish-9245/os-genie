@@ -7,10 +7,11 @@
 - State constraints honestly: "I couldn't reproduce on [env]; here's what I tried" beats guessing.
 - Never: flattery openers, urgency demands ("ASAP", "blocker" for non-security), @-mentioning uninvolved maintainers, or AI self-reference.
 
-## Anti-AI-detection (first-contact comments get scanned as bot output)
+## Write like someone who did the work (first-contact comments get read as bot output when generic)
 
-Detectors key on repetition across issues plus generic phrasing, not on any
-single word. Rules:
+Readers and detectors key on repetition across issues plus generic
+phrasing, not on any single word. The fix is the same either way:
+specifics from real homework. Rules:
 
 - Never reuse a sentence verbatim across issues within 30 days. Vary the
   opener, the plan phrasing, and the closer every time.

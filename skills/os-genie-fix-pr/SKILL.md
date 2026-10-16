@@ -21,10 +21,20 @@ metadata:
 ## Preconditions (stop if unmet)
 
 1. Issue scored >= 60 by `os-genie-issue-triage`, or user explicitly overrides with reason.
-2. `CONTRIBUTING.md` / `AGENTS.md` / PR template read. If none exists, fall back to `references/merge-checklist.md`.
-3. No active assignee or green linked PR (re-check, state changes fast).
+2. Policy recon passes per `references/policy-recon.md`: repo is GREEN or YELLOW, never RED. No-LLM repos are drops, not challenges.
+3. `CONTRIBUTING.md` / `AGENTS.md` / PR template read. Repo PR template always wins over ours; every section gets filled. If none exists, fall back to `references/merge-checklist.md`.
+4. No active assignee or green linked PR (re-check, state changes fast).
 
 ## Workflow
+
+### 0. Policy recon first, code second
+
+Run `references/policy-recon.md` before cloning: fetch AI policy +
+CONTRIBUTING AI section + PR template, classify RED/YELLOW/GREEN.
+RED means stop entirely. On YELLOW or human-submission-only repos, work
+in safe mode: agent pushes the branch and writes the PR body to a file,
+the human reviews (understanding check) and creates the PR. Disclosure is
+mandatory everywhere a policy asks for it, and honest everywhere else.
 
 ### 1. Reproduce first, code second
 
@@ -70,13 +80,18 @@ Each additional failed CI check cuts merge odds ~15%; not-merged agentic PRs ske
 
 Run `scripts/verify_pr.sh` (secrets scan, diff-size guard, branch guard). Then self-review your own diff line by line and remove: credentials, `.env`, debug prints, unrelated formatting, IDE configs, TODO planning files.
 
-Open with `templates/pull-request.md`:
+Open with `templates/pull-request.md` (or the repo's own template, which
+always wins — fill every section, never leave template comments unfilled):
 
 ```bash
 git push -u origin <type>/<short-slug>
 gh pr create --title "<type>(<scope>): <specific description>" --body-file templates/pr-body.md
 gh pr checks --watch
 ```
+
+On human-submission-only repos the agent stops after the push and hands
+the human `/tmp/pr-<n>-body.md` plus the understanding check
+(`references/policy-recon.md` section 5). The human creates the PR.
 
 Completion criterion: PR is green, single-concern, templated, and linked to the issue, ready for `os-genie-maintainer-comms` follow-ups.
 
@@ -88,6 +103,7 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 
 ## References
 
+- Policy recon + disclosure + human-post gate: `references/policy-recon.md`
 - Checklist: `references/merge-checklist.md`
 - Evidence rules: `references/evidence-guide.md`
 - Commits: `references/commit-guide.md`

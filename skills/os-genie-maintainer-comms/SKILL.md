@@ -52,6 +52,13 @@ plus triage `references/claim-guide.md` velocity caps.
 
 Rules: address every comment (no silent skips); quote or link each point; state what changed + commit hash; never argue tone, assume good intent; no AI filler ("Hope you're doing well!", "As an AI").
 
+Human-post rule (non-negotiable on numpy/shapely-family repos, recommended
+everywhere): the agent DRAFTS, the human POSTS. Several projects forbid
+agents posting comments on an author's behalf and require all reviewer
+interaction to be human. Never post a reply to GitHub without the human
+reading it first. Drafts live in the session for approval, not straight to
+`gh`.
+
 Completion criterion: draft covers all reviewer points 1:1 and ends with an explicit ask (re-review / decision / confirmation).
 
 ### 3. Execute follow-up fixes via os-genie-fix-pr
