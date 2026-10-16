@@ -74,6 +74,17 @@ if [ "${#reasons[@]}" -eq 0 ]; then
   done
 fi
 
+# PR-template attestation gate: boxes/sentences an AI cannot truthfully tick
+if [ "${#reasons[@]}" -eq 0 ]; then
+  att_re="(without relying on an? (AI|LLM)|can explain (them|these|it)[^.\n]{0,40}without|i (wrote|authored)[^.\n]{0,30}(myself|by hand)|human[- ]authored|tested (my changes )?on a live (environment|cluster)|not (generated|written) (by|with) (an? )?(AI|LLM))"
+  for f in .github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md pull_request_template.md PULL_REQUEST_TEMPLATE.md docs/pull_request_template.md; do
+    txt=$(gh api "repos/$repo/contents/$f" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || continue
+    [ -n "$txt" ] || continue
+    if printf '%s' "$txt" | grep -qiE "$att_re"; then reasons+=("PR template has an authorship/live-test attestation an agent cannot give ($f)"); fi
+    break
+  done
+fi
+
 last=$(jq -r --argjson now "$now" '[.[]|.createdAt|fromdateiso8601]|max // null|if .==null then null else (($now-.)/86400|floor) end' <<<"$maint")
 [ "${#approval[@]}" -gt 0 ] || reasons+=("no maintainer approval signal")
 [ "$last" = null ] || [ "$last" -le 180 ] || reasons+=("maintainer silent ${last}d")
