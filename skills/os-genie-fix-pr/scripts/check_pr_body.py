@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""PR-body gate for os-genie-fix-pr. Blocks the numpy#33046 failure class.
+
+Usage: check_pr_body.py <owner/repo> <body.md> [--show-template]
+Exit 0 = body matches the repo's real PR template and policy; 1 = fix the body;
+3 = HUMAN_SUBMIT (repo requires a human to create the PR / write the text).
+
+Checks (all from the upstream repo, never from memory):
+  1. Every heading of the repo's PR template is present in the body, in order,
+     with real (non-comment, non-blank) content under it.
+  2. If the template/CONTRIBUTING/AI policy mentions AI, the body contains an
+     honest AI-assistance disclosure.
+  3. Attestation checkboxes ("I wrote this myself", "without relying on an AI",
+     "tested on a live environment") are NOT ticked by the agent.
+  4. Repos that require human submission/communication => exit 3.
+Stdlib + gh only.
+"""
+import base64, json, re, subprocess, sys
+
+TEMPLATES = [".github/PULL_REQUEST_TEMPLATE.md", ".github/pull_request_template.md",
+             "PULL_REQUEST_TEMPLATE.md", "pull_request_template.md",
+             "docs/PULL_REQUEST_TEMPLATE.md", "docs/pull_request_template.md"]
+POLICY_FILES = ["CONTRIBUTING.md", ".github/CONTRIBUTING.md", "AI_POLICY.md",
+                ".github/AI_POLICY.md", "AGENTS.md", "docs/CONTRIBUTING.md"]
+HUMAN_RE = re.compile(
+    r"(must be performed by humans|including the submission of (PRs|pull requests)|"
+    r"written by a human|human[- ]written|PRs? (must|should) be (opened|submitted|created) by (a )?human|"
+    r"no LLMs?\b|AI[- ]generated contributions are not permitted|do not use (AI|LLM)s? (to|for) "
+    r"(respond|reply|communicat|writ))", re.I)
+AI_RE = re.compile(r"\b(AI|LLM|LLMs|Copilot|ChatGPT|Claude|generative)\b", re.I)
+ATTEST_RE = re.compile(
+    r"(without relying on an? (AI|LLM)|i (wrote|authored)[^\n]{0,40}(myself|by hand)|human[- ]authored|"
+    r"tested (my changes )?on a live|reviewed every (line|change)|take full responsibility|"
+    r"understand the (submitted )?changes)", re.I)
+
+def gh_file(repo, path):
+    r = subprocess.run(["gh", "api", f"repos/{repo}/contents/{path}", "--jq", ".content"],
+                       capture_output=True, text=True)
+    if r.returncode or not r.stdout.strip():
+        return None
+    try:
+        return base64.b64decode(r.stdout).decode("utf-8", "replace")
+    except Exception:
+        return None
+
+def strip_comments(t):
+    return re.sub(r"<!--.*?-->", "", t, flags=re.S)
+
+HEAD_RE = r"^(?:#{1,6}\s+(.+?)\s*#*|\*\*(.+?)\*\*:?)\s*$"
+
+def headings(t):
+    return [(m.group(1) or m.group(2)).strip().lower()
+            for m in re.finditer(HEAD_RE, strip_comments(t), re.M)]
+
+def sections(body):
+    """Return list of (heading_lower, content) from the body."""
+    clean = strip_comments(body)
+    ms = list(re.finditer(HEAD_RE, clean, re.M))
+    out = []
+    for i, m in enumerate(ms):
+        end = ms[i + 1].start() if i + 1 < len(ms) else len(clean)
+        out.append(((m.group(1) or m.group(2)).strip().lower(), clean[m.end():end].strip()))
+    return out
+
+def main():
+    if len(sys.argv) < 3:
+        print(__doc__); sys.exit(2)
+    repo, bodyf = sys.argv[1], sys.argv[2]
+    body = open(bodyf, encoding="utf-8").read()
+    tmpl = next((t for t in (gh_file(repo, p) for p in TEMPLATES) if t), None)
+    policy = {p: gh_file(repo, p) for p in POLICY_FILES}
+    policy = {k: v for k, v in policy.items() if v}
+    if "--show-template" in sys.argv:
+        print(tmpl or "(no PR template found)"); sys.exit(0)
+
+    problems, notes = [], []
+
+    # 4. human-submission repos
+    for name, txt in ([("PR template", tmpl)] if tmpl else []) + list(policy.items()):
+        m = HUMAN_RE.search(txt)
+        if m:
+            print(f"HUMAN_SUBMIT: {name} says: ...{m.group(0)}...")
+            print("An agent must not create the PR or write its description for this repo.")
+            print(f"Hand the owner the branch + {bodyf} as a DRAFT of facts only; the owner writes and posts.")
+            sys.exit(3)
+
+    # 1. template fidelity
+    if tmpl:
+        want = headings(tmpl)
+        have = sections(body)
+        have_names = [h for h, _ in have]
+        pos = -1
+        for h in want:
+            if h not in have_names[pos + 1:]:
+                problems.append(f"missing or out-of-order template section: '{h}'")
+                continue
+            pos = have_names.index(h, pos + 1)
+            content = have[pos][1]
+            if len(re.sub(r"[\s\-\*\[\]xX]+", "", content)) < 3:
+                problems.append(f"template section '{h}' is empty")
+    else:
+        notes.append("no PR template in repo: use templates/pull-request.md")
+
+    # 2. AI disclosure
+    mentions_ai = bool(tmpl and AI_RE.search(tmpl)) or any(AI_RE.search(t) for t in policy.values())
+    if mentions_ai and not re.search(r"(AI[- ]assisted|Claude|LLM|AI tool|generated with|written with)", strip_comments(body), re.I):
+        problems.append("repo mentions AI but the body has no honest AI-assistance disclosure")
+
+    # 3. attestation boxes the agent must not tick
+    for line in body.splitlines():
+        if re.match(r"\s*[-*]\s*\[[xX]\]", line) and ATTEST_RE.search(line):
+            problems.append(f"agent ticked an attestation box it cannot truthfully give: {line.strip()[:90]}")
+
+    for n in notes: print("note:", n)
+    if problems:
+        print("BLOCKED: PR body does not satisfy the repo's rules:")
+        for p in problems: print(" -", p)
+        print("Fix: start from the repo template ( --show-template ), fill EVERY section, then re-run.")
+        sys.exit(1)
+    print("PASS: body matches the repo template and policy")
+
+main()

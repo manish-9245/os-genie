@@ -3,7 +3,7 @@ name: os-genie-fix-pr
 description: Implement a GitHub issue fix and open a merge-ready pull request with tests, evidence, and docs. Use when asked to fix an issue, implement a contribution, create a PR, or turn a triaged issue into shippable code.
 license: MIT
 metadata:
-  version: "1.1"
+  version: "1.2"
   pipeline-stage: "2-implement"
   prev-skill: os-genie-issue-triage
   next-skill: os-genie-maintainer-comms
@@ -80,14 +80,25 @@ Each additional failed CI check cuts merge odds ~15%; not-merged agentic PRs ske
 
 Run `scripts/verify_pr.sh` (secrets scan, diff-size guard, branch guard). Then self-review your own diff line by line and remove: credentials, `.env`, debug prints, unrelated formatting, IDE configs, TODO planning files.
 
-Open with `templates/pull-request.md` (or the repo's own template, which
-always wins — fill every section, never leave template comments unfilled):
+**Mandatory gate (numpy#33046 was closed because this was skipped).** Never write a
+PR body from scratch. Print the repo's real template, fill EVERY section under its
+own headings, add an honest AI-assistance disclosure, and open the PR only through
+the wrapper, which refuses on any mismatch:
 
 ```bash
+python3 scripts/check_pr_body.py <upstream/repo> --show-template   # see the real template (also pass any body path)
+# write /tmp/pr-body.md by filling that template, section by section
 git push -u origin <type>/<short-slug>
-gh pr create --title "<type>(<scope>): <specific description>" --body-file templates/pr-body.md
+bash scripts/open_pr.sh <upstream/repo> <fork-owner>:<branch> <base> "<type>(<scope>): <specific description>" /tmp/pr-body.md [--draft]
 gh pr checks --watch
 ```
+
+`open_pr.sh` runs `check_pr_body.py` first. It blocks (exit 1) when a template
+heading is missing, empty, or out of order; when the repo mentions AI but the body has
+no disclosure; or when the agent ticked an attestation box ("I wrote this myself",
+"without relying on an AI", "tested on a live environment"). It stops with exit 3
+(HUMAN_SUBMIT) on repos whose template/CONTRIBUTING says interactions or PR submission
+must be performed by humans (numpy). Never bypass it with a direct `gh pr create`.
 
 On human-submission-only repos the agent stops after the push and hands
 the human `/tmp/pr-<n>-body.md` plus the understanding check
@@ -104,6 +115,7 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 ## References
 
 - Policy recon + disclosure + human-post gate: `references/policy-recon.md`
+- PR-body gate (template fidelity, disclosure, attestation, human-submit): `scripts/check_pr_body.py`, `scripts/open_pr.sh`
 - Checklist: `references/merge-checklist.md`
 - Evidence rules: `references/evidence-guide.md`
 - Commits: `references/commit-guide.md`

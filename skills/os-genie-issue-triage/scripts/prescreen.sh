@@ -66,7 +66,7 @@ fi
 
 # repo AI-policy gate (README / CONTRIBUTING / AI policy files) - only for issues still passing
 if [ "${#reasons[@]}" -eq 0 ]; then
-  ban_re="(AI|LLM|LLMs|generative)[- ]?(generated|assisted)?[^.\n]{0,60}(not (permitted|allowed|accepted)|are banned|is banned|prohibited|forbidden|will be (closed|rejected))|no (LLM|AI)s?\b|written by a human|not an? (LLM|AI)\b|(do not|don.?t) (use|submit)[^.\n]{0,40}(AI|LLM)"
+  ban_re="(AI|LLM|LLMs|generative)[- ]?(generated|assisted)?[^.\n]{0,60}(not (permitted|allowed|accepted)|are banned|is banned|prohibited|forbidden|will be (closed|rejected))|no (LLM|AI)s?\b|written by a human|must be performed by humans|including the submission of (PRs|pull requests)|not an? (LLM|AI)\b|(do not|don.?t) (use|submit)[^.\n]{0,40}(AI|LLM)"
   for f in README.md CONTRIBUTING.md .github/CONTRIBUTING.md AI_POLICY.md .github/AI_POLICY.md AGENTS.md; do
     txt=$(gh api "repos/$repo/contents/$f" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || continue
     if printf '%s' "$txt" | grep -qiE "$ban_re"; then reasons+=("repo AI policy may forbid AI contributions ($f)"); break; fi
@@ -76,7 +76,7 @@ fi
 
 # PR-template attestation gate: boxes/sentences an AI cannot truthfully tick
 if [ "${#reasons[@]}" -eq 0 ]; then
-  att_re="(without relying on an? (AI|LLM)|can explain (them|these|it)[^.\n]{0,40}without|i (wrote|authored)[^.\n]{0,30}(myself|by hand)|human[- ]authored|tested (my changes )?on a live (environment|cluster)|not (generated|written) (by|with) (an? )?(AI|LLM))"
+  att_re="(must be performed by humans|including the submission of (PRs|pull requests)|without relying on an? (AI|LLM)|can explain (them|these|it)[^.\n]{0,40}without|i (wrote|authored)[^.\n]{0,30}(myself|by hand)|human[- ]authored|tested (my changes )?on a live (environment|cluster)|not (generated|written) (by|with) (an? )?(AI|LLM))"
   for f in .github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md pull_request_template.md PULL_REQUEST_TEMPLATE.md docs/pull_request_template.md; do
     txt=$(gh api "repos/$repo/contents/$f" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || continue
     [ -n "$txt" ] || continue
