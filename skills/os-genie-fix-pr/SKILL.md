@@ -137,6 +137,10 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 - **Local site:** `python3 scripts/ledger.py serve` shows the ledger at http://localhost:8787 (needs-you list first, then one filterable table of PRs). It is a local page only. Nothing is published.
 - **Cleanup, merged only:** delete a project's local clone only after its PR is MERGED. `python3 scripts/ledger.py cleanup` lists what it would delete and `--apply` deletes, after re-checking the PR state live on GitHub. Open, draft and closed-unmerged PRs keep their clones, because the owner may still need to fix or reopen them.
 
+## Claims (owner rule: track them)
+
+Issues where the owner asked to work on them are tracked with `python3 scripts/ledger.py claims` (it is part of `ledger.py all`). It records each one as Assigned to me, Waiting for a reply, No answer for N days, Taken by someone else, PR sent, or Issue closed. Check the list in the review loop: a claim with no answer after 14 days gets one short follow-up from the owner (not the agent), a claim taken by someone else is dropped, and `ledger.py drop-claim owner/repo#N "reason"` retires a claim that no longer matters. The agent never posts a claim comment on its own. Claims follow `os-genie-issue-triage/references/claim-guide.md` (approval first, daily and per-org caps).
+
 ## Rules
 
 - Never force-push to upstream; never commit secrets. Scan the staged diff for `api_key|password|secret|token` assignments before pushing.

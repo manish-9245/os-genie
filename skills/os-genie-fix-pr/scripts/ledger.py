@@ -9,7 +9,9 @@
   ledger.py serve [port]               serve the site on http://localhost:8787
   ledger.py inbox [--mark]             list what each open PR is waiting on: reviews, comments, CI, conflicts, CLA (writes inbox.md)
   ledger.py cleanup [--apply]          delete local clones ONLY for PRs that are MERGED (verified live)
-  ledger.py all                        sync + site (run this at the end of every task)
+  ledger.py claims                     track the issues you asked to work on (assigned, waiting, lost, done)
+  ledger.py drop-claim REPO#N "reason"  mark a claim as no longer needed
+  ledger.py all                        sync + claims + site (run this at the end of every task)
 Stdlib + gh only.
 """
 import json, os, re, subprocess, sys, shutil, datetime, html, pathlib
@@ -166,6 +168,57 @@ def cmd_inbox(mark):
     save(d); (HOME / "inbox.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines) if len(lines) > 2 else "inbox empty"); print("written:", HOME / "inbox.md")
 
+
+CLAIM_RE = re.compile(r"(i.?ll take|i can take|pick (this|it) up|work on (this|it)|assign (this|me|it)|can i (take|work|try)|i.?d (like|love) to (work|take|fix|pick|help)|let me (take|work|try)|i can (work|fix|help)|working on (this|it)|i will (work|fix|take|submit|open)|claim)", re.I)
+
+def cmd_claims():
+    """Track issues you asked to work on: assigned to you, waiting, lost to someone else, or already done."""
+    d = load(); login = me()
+    cfg = HOME / "config.json"
+    since = json.loads(cfg.read_text()).get("since", "2026-10-13") if cfg.exists() else "2026-10-13"
+    r = gh("search", "issues", "--commenter", login, "--updated", f">={since}", "--limit", "100", "--json", "number,repository,title,url,state,assignees")
+    try: items = json.loads(r.stdout or "[]")
+    except Exception: items = []
+    pr_issues = {(k.rsplit("#", 1)[0], str(e.get("issue") or "")) for k, e in d["prs"].items()}
+    for k, e in d["prs"].items():           # also treat "#123" in a PR title as the linked issue
+        repo = k.rsplit("#", 1)[0]
+        for m in re.findall(r"#(\d+)", e.get("title", "")): pr_issues.add((repo, m))
+    out = {}
+    for it in items:
+        repo = it["repository"]["nameWithOwner"]; n = str(it["number"]); key = f"{repo}#{n}"
+        cr = gh("api", f"repos/{repo}/issues/{n}/comments", "--paginate")
+        try: comments = json.loads(cr.stdout or "[]")
+        except Exception: comments = []
+        mine = [c for c in comments if c["user"]["login"] == login and CLAIM_RE.search(c.get("body") or "")]
+        if not mine: continue               # you commented, but it was not a claim
+        last = mine[-1]["created_at"][:10]
+        days = (datetime.date.today() - datetime.date.fromisoformat(last)).days
+        assignees = [a["login"] for a in it.get("assignees", [])]
+        tl = gh("api", f"repos/{repo}/issues/{n}/timeline", "--paginate", "--jq",
+                f'[.[]|select(.event=="cross-referenced" and .source.issue.pull_request!=null and .source.issue.user.login=="{login}")]|length')
+        has_pr = (tl.stdout.strip().replace("\n", "+") or "0")
+        try: has_pr = sum(int(x) for x in has_pr.split("+")) > 0
+        except Exception: has_pr = False
+        if has_pr or (repo, n) in pr_issues: status, word = "DONE", "PR sent"
+        elif it["state"] == "closed": status, word = "CLOSED", "Issue closed"
+        elif login in assignees: status, word = "ASSIGNED", "Assigned to me"
+        elif assignees: status, word = "LOST", "Taken by someone else"
+        elif days >= 14: status, word = "STALE", f"No answer for {days} days"
+        else: status, word = "WAITING", "Waiting for a reply"
+        out[key] = {"repo": repo, "number": n, "title": it["title"], "url": it["url"], "status": status, "word": word, "claimed": last, "checked": now()}
+    for k, o in d.get("claim_overrides", {}).items():
+        if k in out: out[k].update(o)
+    d["claims"] = out; save(d)
+    from collections import Counter
+    print("claims:", dict(Counter(v["status"] for v in out.values())) or "none")
+
+def cmd_drop_claim(args):
+    """ledger.py drop-claim REPO#N "reason": mark a claim as no longer needed (fixed upstream, obsolete, ...)."""
+    k = key(args[0]); reason = " ".join(args[1:]) or "no longer needed"
+    d = load(); d.setdefault("claim_overrides", {})[k] = {"status": "DROPPED", "word": "Dropped: " + reason}
+    if k in d.get("claims", {}): d["claims"][k].update(d["claim_overrides"][k])
+    save(d); print("dropped", k)
+
 def cmd_cleanup(apply):
     d = load(); login = me(); freed = 0
     for k, e in sorted(d["prs"].items()):
@@ -209,7 +262,9 @@ def export_rows():
     cfg = HOME / "config.json"
     since = json.loads(cfg.read_text()).get("since", "2026-10-13") if cfg.exists() else "2026-10-13"
     label = datetime.date.fromisoformat(since).strftime("%-d %B %Y")
-    return {"rows": rows, "counts": counts, "built": now(), "since_label": label}
+    claims = sorted(load().get("claims", {}).values(), key=lambda c: ({"ASSIGNED": 0, "WAITING": 1, "STALE": 2, "LOST": 3, "DONE": 4, "CLOSED": 5, "DROPPED": 6}.get(c["status"], 9), c["claimed"]))
+    claims = [{k: c[k] for k in ("repo", "number", "title", "url", "status", "word", "claimed")} for c in claims]
+    return {"rows": rows, "counts": counts, "built": now(), "since_label": label, "claims": claims}
 
 def d_all(): return load()["prs"]
 
@@ -252,6 +307,8 @@ def main():
     elif c == "serve": cmd_serve(*a[1:2])
     elif c == "cleanup": cmd_cleanup("--apply" in a)
     elif c == "inbox": cmd_inbox("--mark" in a)
-    elif c == "all": cmd_sync(); cmd_site()
+    elif c == "claims": cmd_claims()
+    elif c == "drop-claim": cmd_drop_claim(a[1:])
+    elif c == "all": cmd_sync(); cmd_claims(); cmd_site()
     else: print(__doc__)
 main()
