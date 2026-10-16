@@ -3,7 +3,7 @@ name: os-genie-repo-finder
 description: Find quality open-source repos where a first contribution is likely to get merged. Use when asked to find repos to contribute to, evaluate a repo before investing, build a contribution shortlist, or check merge chances.
 license: MIT
 metadata:
-  version: "1.1"
+  version: "1.2"
   pipeline-stage: "0-discover"
   next-skill: os-genie-issue-triage
 ---
@@ -28,6 +28,15 @@ Sources to seed candidates: `github.com/<owner>/<repo>/contribute`, goodfirstiss
 
 Gather 5-8 candidates. Then score: never recommend unscored.
 
+### 1b. Rank significant repos by merge velocity
+
+```bash
+scripts/find_fast_repos.sh <language> 3000 25   # TSV: repo stars median_outsider_merge_hours ext_merged last_push
+```
+
+Keep median <= 72h with >= 5 outsider merges (60 closed PRs). Significant (>=3k stars) AND fast
+beats famous AND slow. Details: `os-genie-issue-triage/references/fast-merge-playbook.md`.
+
 ### 2. Hard-reject filter (any one = drop)
 
 - No OSI-approved license (check `LICENSE` / `gh api repos/<o>/<r> --jq .license.spdx_id`)
@@ -44,7 +53,12 @@ Gather 5-8 candidates. Then score: never recommend unscored.
   Oct 2026: PR closed on sight). Disclosure-requiring repos (numpy-style)
   pass, but note the disclosure + human-submission cost in the score.
 
-Completion criterion: every survivor passes all six, stated explicitly.
+- PR template demands a human-authorship attestation (hyperium/hyper pattern, Oct 2026:
+  check failed until a human restores the statement). Passable only if the owner will
+  attest personally; flag it.
+- Owner has not signed the required CLA/DCO tooling (EasyCLA, CLA bot): sign first.
+
+Completion criterion: every survivor passes all eight, stated explicitly.
 
 ### 3. Score survivors 0-100
 

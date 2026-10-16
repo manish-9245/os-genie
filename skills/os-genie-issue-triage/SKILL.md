@@ -3,7 +3,7 @@ name: os-genie-issue-triage
 description: Score and select quality, maintainer-approved GitHub issues worth fixing. Use when asked to find a good first issue, triage issues, vet an issue before coding, or decide which issue to work on.
 license: MIT
 metadata:
-  version: "1.1"
+  version: "1.2"
   pipeline-stage: "1-triage"
   next-skill: os-genie-fix-pr
 ---
@@ -36,10 +36,15 @@ Stop when you have 5 candidates or 2 pages of search results, whichever comes fi
 
 ### 2. Hard-reject filter (any one = drop)
 
+Run `scripts/prescreen.sh <owner/repo> <n>` on every candidate first; it automates
+the checks below plus claimant and maintainer-doubt detection. Only PASS survives.
+Agents must never be dispatched on an unscreened issue (see `references/fast-merge-playbook.md`).
+
 - Labelled `wontfix`, `invalid`, `duplicate`, `needs-info` / `question` with no maintainer follow-up
 - Already assigned, or has an open linked PR that is green/active (<14 days)
 - No maintainer comment in >180 days AND no `triaged`/`confirmed`/`accepted` label
 - Pure discussion / roadmap / RFC with no agreed scope ("we should maybe…", no decision comment)
+- Open PR from anyone (timeline cross-reference or search), any claimant comment <45d, or maintainer doubt ("not sure we want", lint rule conflicts, "wontfix")
 - Security report that asks for private disclosure (route to SECURITY.md instead, never triage publicly)
 
 Completion criterion: every surviving candidate has zero hard-reject flags, stated explicitly.
@@ -89,5 +94,6 @@ a "small docs fix": small scope does not waive approval, and the pallets
 
 - Full rubric: `references/scoring-rubric.md`
 - Claim guide (block-risk, velocity, human wording): `references/claim-guide.md`
+- Fast-merge playbook (velocity picking, issue shapes, queries): `references/fast-merge-playbook.md`
 - Search recipes: `references/gh-queries.md`
 - Data sources: `references/evidence.md`
