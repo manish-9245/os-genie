@@ -35,13 +35,17 @@ def me():
 CLA_UNSIGNED = re.compile(r"(not[- ]signed|has not signed|have to sign|please sign|you can sign|before we can accept)", re.I)
 CLA_SIGNED = re.compile(r"(all contributors have signed|have signed the cla|cla signed)", re.I)
 
+IGN_USERS = {"CLAassistant", "vercel", "linux-foundation-easycla", "netlify", "codecov", "github-actions", "coderabbitai", "greptile-apps", "changeset-bot", "copilot-pull-request-reviewer"}
+NOISE_CHECKS = ("cla", "vercel", "netlify", "codecov")
+
 def pr_state(repo, n, login):
     r = gh("pr", "view", str(n), "--repo", repo, "--json",
            "title,state,isDraft,mergedAt,closedAt,updatedAt,url,reviewDecision,statusCheckRollup,comments,additions,deletions,headRefName")
     if r.returncode: return None
     d = json.loads(r.stdout)
     failing = sorted({c.get("name") or c.get("context") for c in d.get("statusCheckRollup") or []
-                      if (c.get("conclusion") or c.get("state")) in ("FAILURE", "ERROR", "TIMED_OUT")})
+                      if (c.get("conclusion") or c.get("state")) in ("FAILURE", "ERROR", "TIMED_OUT")
+                      and not any(x in (c.get("name") or c.get("context") or "").lower() for x in NOISE_CHECKS)})
     cla = "n/a"
     last_other = None
     for c in d.get("comments") or []:
@@ -50,7 +54,7 @@ def pr_state(repo, n, login):
         if a.endswith("[bot]") or a in ("github-actions", "CLAassistant", "linux-foundation-easycla"):
             if re.search(r"(CLA|Contributor License)", b, re.I):
                 cla = "signed" if (CLA_SIGNED.search(b) and not CLA_UNSIGNED.search(b)) else ("unsigned" if CLA_UNSIGNED.search(b) else cla)
-        elif a and a != login:
+        elif a and a != login and a not in IGN_USERS and "bot" not in a.lower():
             last_other = {"by": a, "at": c.get("createdAt", "")[:10], "text": b[:160]}
     state = "MERGED" if d.get("mergedAt") else ("CLOSED" if d["state"] == "CLOSED" else ("DRAFT" if d.get("isDraft") else "OPEN"))
     return {"title": d["title"], "state": state, "url": d["url"], "updated": d["updatedAt"][:10],
@@ -94,11 +98,12 @@ def needs_you(e):
     out = []
     if e.get("state") in ("OPEN", "DRAFT"):
         if e.get("cla") == "unsigned": out.append("Sign the CLA")
-        if e.get("failing"): out.append("Checks failing: " + ", ".join(e["failing"][:3]))
-        if e.get("review") == "CHANGES_REQUESTED": out.append("Changes requested")
-        if e.get("reply"): out.append(f"Reply from {e['reply']['by']} ({e['reply']['at']})")
-    for it in e.get("inbox", []):
-        if it["action"].startswith(("FIX", "REPLY", "OWNER")) and it["kind"] != "cla": out.append(f"{it['action'].split(' ')[0].title()}: {it['kind'].replace('_', ' ')} {it['by']}".strip())
+        seen = set()
+        for it in e.get("inbox", []):
+            if it["kind"] == "cla" or it["action"] == "READ": continue
+            label = {"changes_requested": "Changes requested", "review": "Review to answer", "inline_review": "Review comment to fix",
+                     "comment": "Question to answer", "ci_failing": "CI failing", "merge_conflict": "Merge conflict"}.get(it["kind"], it["kind"])
+            if label not in seen: seen.add(label); out.append(label + (f" ({it['by']})" if it["by"] else ""))
     if e.get("owner_action"): out.append(e["owner_action"])
     return out
 

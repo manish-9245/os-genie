@@ -23,9 +23,11 @@ h2{font-size:1.15rem;margin:2rem 0 .6rem}
 .stats{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;list-style:none;padding:0;margin:.5rem 0 0}
 .stats li{font-size:1.05rem}.stats b{font-size:1.3rem}
 .need{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
-.need li{background:var(--warnbg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:.7rem .9rem}
-.need a{color:inherit;font-weight:600}
-.need ul{margin:.3rem 0 0;padding-left:1.2rem}
+.need li{background:var(--warnbg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:.55rem .8rem;display:flex;flex-wrap:wrap;gap:.15rem .8rem;align-items:baseline}
+.need li{overflow-wrap:anywhere;min-width:0}
+.need a{color:inherit;font-weight:700}
+.need .why{margin-left:auto;font-weight:600}
+.need .t{flex:1 1 14rem}
 .tools{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:end;margin:.6rem 0}
 label{display:block;font-weight:600;margin-bottom:.2rem}
 input[type=search]{font:inherit;color:var(--fg);background:var(--bg);border:2px solid var(--muted);border-radius:6px;padding:.45rem .6rem;min-width:16rem}
@@ -33,7 +35,9 @@ input[type=search]{font:inherit;color:var(--fg);background:var(--bg);border:2px 
 .chips legend{font-weight:600;margin-bottom:.2rem;padding:0}
 button.chip{font:inherit;color:var(--fg);background:var(--bg);border:2px solid var(--muted);border-radius:999px;padding:.35rem .9rem;cursor:pointer;min-height:2.5rem}
 button.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-table{width:100%;border-collapse:collapse}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th:nth-child(1){width:44%}th:nth-child(2){width:9%}th:nth-child(3){width:28%}th:nth-child(4){width:10%}th:nth-child(5){width:9%}
+td:nth-child(4){white-space:nowrap}
 caption{text-align:left;color:var(--muted);padding:.4rem 0}
 th,td{text-align:left;padding:.65rem .5rem;border-top:1px solid var(--line);vertical-align:top}
 thead th{border-top:0;border-bottom:2px solid var(--fg);font-size:.9rem}
@@ -42,6 +46,7 @@ thead th{border-top:0;border-bottom:2px solid var(--fg);font-size:.9rem}
 .b-OPEN{color:var(--ok);background:var(--okbg)}.b-DRAFT{color:var(--info);background:var(--infobg)}
 .b-MERGED{color:var(--ok);background:var(--okbg)}.b-CLOSED{color:var(--bad);background:var(--badbg)}
 details summary{cursor:pointer;color:var(--link)}
+details[open]{grid-column:1/-1}
 details dl{margin:.5rem 0 0;display:grid;grid-template-columns:max-content 1fr;gap:.2rem .8rem;font-size:.92rem}
 dt{color:var(--muted)}dd{margin:0;word-break:break-word}
 .notes{margin:.4rem 0 0;padding-left:1.1rem;font-size:.9rem;color:var(--muted)}
@@ -49,6 +54,8 @@ dt{color:var(--muted)}dd{margin:0;word-break:break-word}
 footer{margin-top:2.5rem;color:var(--muted);font-size:.92rem}
 code{background:var(--card);padding:.1rem .35rem;border-radius:4px}
 @media (max-width:720px){
+ .need .why{margin-left:0;flex-basis:100%}
+ th:nth-child(n){width:auto}
  thead{position:absolute;left:-999px}
  table,tbody,tr,td{display:block;width:100%}
  tr{border-top:2px solid var(--line);padding:.6rem 0}
@@ -99,7 +106,7 @@ $('#stats').innerHTML=[['Needs you',c.NEED],['Open',c.OPEN+c.DRAFT],['Merged',c.
 const needRows=DATA.rows.filter(r=>r.need.length&&(r.state==='OPEN'||r.state==='DRAFT'));
 if(needRows.length){
  $('#needsec').hidden=false;
- $('#need').innerHTML=needRows.map(r=>`<li><a href="${esc(r.url)}">${esc(r.key)}</a> ${esc(r.title)}<ul>${r.need.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></li>`).join('');
+ $('#need').innerHTML=needRows.map(r=>`<li><a href="${esc(r.url)}">${esc(r.key)}</a><span class="t">${esc(r.title)}</span><span class="why">${r.need.map(esc).join(' &middot; ')}</span></li>`).join('');
 }
 const chips=[['ALL','All'],['NEED','Needs you'],['OPEN','Open'],['MERGED','Merged'],['CLOSED','Closed']];
 $('#chips').insertAdjacentHTML('beforeend',chips.map(([k,l])=>`<button type="button" class="chip" data-f="${k}" aria-pressed="${k==='ALL'}">${l}</button>`).join(''));
@@ -125,7 +132,7 @@ function details(r){
  const rows=[['Size',r.size],['Branch',r.branch],['Issue',r.issue&&('#'+r.issue)],['Evidence',r.evidence],['Local clone',r.clone],
   ['Last reply',r.reply&&(r.reply.by+' on '+r.reply.at+': '+r.reply.text)]].filter(x=>x[1]);
  const n=(r.notes||[]).length?`<ul class="notes">${r.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
- return `<details><summary>Details for ${esc(r.key)}</summary><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${n}</details>`;
+ return `<details><summary aria-label="Details for ${esc(r.key)}">Details</summary><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${n}</details>`;
 }
 function render(){
  const rs=DATA.rows.filter(match);
