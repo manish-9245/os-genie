@@ -23,7 +23,7 @@ TEMPLATES = [".github/PULL_REQUEST_TEMPLATE.md", ".github/pull_request_template.
 POLICY_FILES = ["CONTRIBUTING.md", ".github/CONTRIBUTING.md", "AI_POLICY.md",
                 ".github/AI_POLICY.md", "AGENTS.md", "docs/CONTRIBUTING.md"]
 HUMAN_RE = re.compile(
-    r"(must be performed by humans|including the submission of (PRs|pull requests)|"
+    r"(must be performed by humans|(PR descriptions|pull request descriptions)[^.\n]{0,80}(from|by) humans|to be from humans|including the submission of (PRs|pull requests)|"
     r"written by a human|human[- ]written|PRs? (must|should) be (opened|submitted|created) by (a )?human|"
     r"no LLMs?\b|AI[- ]generated contributions are not permitted|do not use (AI|LLM)s? (to|for) "
     r"(respond|reply|communicat|writ))", re.I)
@@ -46,11 +46,16 @@ def gh_file(repo, path):
 def strip_comments(t):
     return re.sub(r"<!--.*?-->", "", t, flags=re.S)
 
-HEAD_RE = r"^(?:#{1,6}\s+(.+?)\s*#*|\*\*(.+?)\*\*:?)\s*$"
+HEAD_RE = r"^(?:(#{1,6})\s+(.+?)\s*#*|\*\*(.+?)\*\*:?)\s*$"
+
+def _name(m):
+    return (m.group(2) or m.group(3)).strip().lower()
+
+def _level(m):
+    return len(m.group(1)) if m.group(1) else 7
 
 def headings(t):
-    return [(m.group(1) or m.group(2)).strip().lower()
-            for m in re.finditer(HEAD_RE, strip_comments(t), re.M)]
+    return [_name(m) for m in re.finditer(HEAD_RE, strip_comments(t), re.M)]
 
 def sections(body):
     """Return list of (heading_lower, content) from the body."""
@@ -58,15 +63,19 @@ def sections(body):
     ms = list(re.finditer(HEAD_RE, clean, re.M))
     out = []
     for i, m in enumerate(ms):
-        end = ms[i + 1].start() if i + 1 < len(ms) else len(clean)
-        out.append(((m.group(1) or m.group(2)).strip().lower(), clean[m.end():end].strip()))
+        end = len(clean)
+        for m2 in ms[i + 1:]:
+            if _level(m2) <= _level(m):   # same or higher level closes this section
+                end = m2.start(); break
+        out.append((_name(m), clean[m.end():end].strip()))
     return out
 
 def main():
     if len(sys.argv) < 3:
         print(__doc__); sys.exit(2)
     repo, bodyf = sys.argv[1], sys.argv[2]
-    body = open(bodyf, encoding="utf-8").read()
+    show = "--show-template" in sys.argv
+    body = "" if show else open(bodyf, encoding="utf-8").read()
     tmpl = next((t for t in (gh_file(repo, p) for p in TEMPLATES) if t), None)
     policy = {p: gh_file(repo, p) for p in POLICY_FILES}
     policy = {k: v for k, v in policy.items() if v}

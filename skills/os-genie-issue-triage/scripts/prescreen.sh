@@ -66,7 +66,7 @@ fi
 
 # repo AI-policy gate (README / CONTRIBUTING / AI policy files) - only for issues still passing
 if [ "${#reasons[@]}" -eq 0 ]; then
-  ban_re="(AI|LLM|LLMs|generative)[- ]?(generated|assisted)?[^.\n]{0,60}(not (permitted|allowed|accepted)|are banned|is banned|prohibited|forbidden|will be (closed|rejected))|no (LLM|AI)s?\b|written by a human|must be performed by humans|including the submission of (PRs|pull requests)|not an? (LLM|AI)\b|(do not|don.?t) (use|submit)[^.\n]{0,40}(AI|LLM)"
+  ban_re="(AI|LLM|LLMs|generative)[- ]?(generated|assisted)?[^.\n]{0,60}(not (permitted|allowed|accepted)|are banned|is banned|prohibited|forbidden|will be (closed|rejected))|no (LLM|AI)s?\b|written by a human|(PR|pull request) descriptions[^.\n]{0,80}(from|by) humans|to be from humans|must be performed by humans|including the submission of (PRs|pull requests)|not an? (LLM|AI)\b|(do not|don.?t) (use|submit)[^.\n]{0,40}(AI|LLM)"
   for f in README.md CONTRIBUTING.md .github/CONTRIBUTING.md AI_POLICY.md .github/AI_POLICY.md AGENTS.md; do
     txt=$(gh api "repos/$repo/contents/$f" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || continue
     if printf '%s' "$txt" | grep -qiE "$ban_re"; then reasons+=("repo AI policy may forbid AI contributions ($f)"); break; fi
