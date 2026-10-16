@@ -85,6 +85,18 @@ if [ "${#reasons[@]}" -eq 0 ]; then
   done
 fi
 
+# per-repo pacing: bulk PRs from one new contributor get swept closed (freeCodeCamp 2026-10-16: 4 of 10 closed in minutes)
+if [ "${#reasons[@]}" -eq 0 ]; then
+  me=$(gh api user --jq .login 2>/dev/null)
+  if [ -n "$me" ]; then
+    sleep 2.2
+    mine=$(gh api -X GET search/issues -f q="repo:$repo is:pr author:$me" -f per_page=30 --jq '[.items[]|{state:.state,merged:(.pull_request.merged_at!=null)}]' 2>/dev/null || echo '[]')
+    nopen=$(jq '[.[]|select(.state=="open")]|length' <<<"$mine"); nclosed=$(jq '[.[]|select(.state=="closed" and (.merged|not))]|length' <<<"$mine")
+    [ "$nopen" -lt 2 ] || reasons+=("pacing: already $nopen open PRs from this account in $repo (cap 2)")
+    [ "$nclosed" -lt 2 ] || reasons+=("pacing: $nclosed of this account's PRs in $repo were closed unmerged: stop and let the owner check")
+  fi
+fi
+
 last=$(jq -r --argjson now "$now" '[.[]|.createdAt|fromdateiso8601]|max // null|if .==null then null else (($now-.)/86400|floor) end' <<<"$maint")
 [ "${#approval[@]}" -gt 0 ] || reasons+=("no maintainer approval signal")
 [ "$last" = null ] || [ "$last" -le 180 ] || reasons+=("maintainer silent ${last}d")
