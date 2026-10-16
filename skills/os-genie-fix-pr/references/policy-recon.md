@@ -34,7 +34,7 @@ torchgeo AGENTS.md, 2026-10-15.)
 | Class | Signal | Action |
 |---|---|---|
 | RED | "No LLMs", "we don't accept AI-assisted PRs", ban on AI output anywhere | HARD DROP. No branch, no PR, no comment. Log and move on. |
-| YELLOW | No written policy, but recent AI closures or maintainer complaints | Proceed only with full disclosure + human-post gate (section 4). Smallest possible diff. |
+| YELLOW | No written policy, but recent AI closures or maintainer complaints | Proceed with the human-post gate (section 4); disclose only if the repo asks. Smallest possible diff. |
 | GREEN | Written policy allowing disclosed AI assistance (numpy/scipy-family style) | Proceed, follow the policy to the letter: template + disclosure + understanding. |
 
 Classification goes in the PR notes and in progress.md. When in doubt

@@ -50,7 +50,7 @@ When two types fit, pick the user-facing effect and mention the other in the bod
 
 - `Fixes #123` (closes the issue on merge) or `Refs #123` (related, partial work).
 - `BREAKING CHANGE: <what breaks and migration path>` (required with `!`).
-- `Co-authored-by: Name <email>` for pair/agent collaboration.
+- `Co-authored-by: Name <email>` for human collaborators only. No AI-tool trailers (Claude, Anthropic, etc.) unless the repo's policy asks for disclosure in the commit (then use its exact format, e.g. `Assisted-by`).
 - `Signed-off-by: Name <email>` only where the project enforces DCO (Linux kernel, CNCF projects); skip elsewhere.
 
 ## Full example

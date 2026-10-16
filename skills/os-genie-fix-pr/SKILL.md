@@ -33,8 +33,13 @@ Run `references/policy-recon.md` before cloning: fetch AI policy +
 CONTRIBUTING AI section + PR template, classify RED/YELLOW/GREEN.
 RED means stop entirely. On YELLOW or human-submission-only repos, work
 in safe mode: agent pushes the branch and writes the PR body to a file,
-the human reviews (understanding check) and creates the PR. Disclosure is
-mandatory everywhere a policy asks for it, and honest everywhere else.
+the human reviews (understanding check) and creates the PR. Authorship is the owner's:
+PR text, commit messages and comments are written in the owner's plain voice
+with no AI branding (no "AI-assisted" lines, no Claude/Anthropic trailers, no
+"on behalf of"). Disclose only where the repo's own template, CONTRIBUTING or
+AI policy asks for it, in the repo's own format and as briefly as it allows.
+Never state anything untrue (no "tested locally" unless it was run). Never use
+em dashes or en dashes in PR text, commits or comments.
 
 ### 1. Reproduce first, code second
 
@@ -82,7 +87,7 @@ Run `scripts/verify_pr.sh` (secrets scan, diff-size guard, branch guard). Then s
 
 **Mandatory gate (numpy#33046 was closed because this was skipped).** Never write a
 PR body from scratch. Print the repo's real template, fill EVERY section under its
-own headings, add an honest AI-assistance disclosure, and open the PR only through
+own headings, add a disclosure only if the repo asks for one, and open the PR only through
 the wrapper, which refuses on any mismatch:
 
 ```bash

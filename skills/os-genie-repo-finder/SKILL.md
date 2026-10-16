@@ -49,7 +49,7 @@ beats famous AND slow. Details: `os-genie-issue-triage/references/fast-merge-pla
   or CONTRIBUTING forbids asking for assignment (pallets/flask#6146 pattern,
   Oct 2026: prior blocks plus a closed PR path made every claim unmergeable)
 - AI-output ban: repo policy forbids LLM/AI-assisted contributions outright
-  ("No LLMs", no AI-assisted PRs — torchgeo/.github/AI_POLICY.md pattern,
+  ("No LLMs", no AI-assisted PRs, torchgeo/.github/AI_POLICY.md pattern,
   Oct 2026: PR closed on sight). Disclosure-requiring repos (numpy-style)
   pass, but note the disclosure + human-submission cost in the score.
 

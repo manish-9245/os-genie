@@ -79,5 +79,5 @@ Arguing in review · going silent >48h on actionable feedback · force-pushing a
 
 ## References
 
-- Templates A–F: `references/response-templates.md`
+- Templates A-F: `references/response-templates.md`
 - Tone + timing rules: `references/tone-rules.md`

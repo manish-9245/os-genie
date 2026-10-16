@@ -28,6 +28,9 @@ HUMAN_RE = re.compile(
     r"no LLMs?\b|AI[- ]generated contributions are not permitted|do not use (AI|LLM)s? (to|for) "
     r"(respond|reply|communicat|writ))", re.I)
 AI_RE = re.compile(r"\b(AI|LLM|LLMs|Copilot|ChatGPT|Claude|generative)\b", re.I)
+DISC_RE = re.compile(
+    r"((disclos|indicate|declare|mention|state|tell us|let us know|note)[^\n]{0,120}\b(AI|LLM|Copilot|ChatGPT|generative)\b|"
+    r"\b(AI|LLM|Copilot|ChatGPT|generative)\b[^\n]{0,120}(disclos|must be (indicated|declared|mentioned)|should be (indicated|declared|mentioned)))", re.I)
 ATTEST_RE = re.compile(
     r"(without relying on an? (AI|LLM)|i (wrote|authored)[^\n]{0,40}(myself|by hand)|human[- ]authored|"
     r"tested (my changes )?on a live|reviewed every (line|change)|take full responsibility|"
@@ -110,10 +113,14 @@ def main():
     else:
         notes.append("no PR template in repo: use templates/pull-request.md")
 
-    # 2. AI disclosure
-    mentions_ai = bool(tmpl and AI_RE.search(tmpl)) or any(AI_RE.search(t) for t in policy.values())
-    if mentions_ai and not re.search(r"(AI[- ]assisted|Claude|LLM|AI tool|generated with|written with)", strip_comments(body), re.I):
-        problems.append("repo mentions AI but the body has no honest AI-assistance disclosure")
+    # 2. AI disclosure, ONLY where the repo's own rules ask for one
+    rule_txts = ([strip_comments(tmpl)] if tmpl else []) + [v for k, v in policy.items() if k != "AGENTS.md"]
+    needs_disc = any(DISC_RE.search(t) for t in rule_txts)
+    if needs_disc and not re.search(r"(AI[- ]assisted|Claude|LLM|AI tool|generated with|written with)", strip_comments(body), re.I):
+        problems.append("the repo's rules ask for AI disclosure but the body has none (use the repo's own format, keep it short)")
+    # 2b. style: no em/en dashes anywhere in the body
+    if re.search("[\u2014\u2013]", body):
+        problems.append("body contains an em dash or en dash: remove it (owner rule)")
 
     # 3. attestation boxes the agent must not tick
     for line in body.splitlines():
