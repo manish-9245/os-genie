@@ -85,7 +85,7 @@ a "small docs fix": small scope does not waive approval, and the pallets
 
 ## Rules
 
-- Pacing (freeCodeCamp 2026-10-16): at most 2 open PRs per repo from the account at a time. If 2 or more PRs in a repo are closed unmerged without a comment, STOP everything in that repo and tell the owner: it is a bulk-submission sweep and continuing risks an org block (pallets pattern). `prescreen.sh` enforces this.
+- Pacing (freeCodeCamp 2026-10-16): at most 4 open PRs per repo (raised from 2 on owner instruction) from the account at a time. If 2 or more PRs in a repo are closed unmerged without a comment, STOP everything in that repo and tell the owner: it is a bulk-submission sweep and continuing risks an org block (pallets pattern). `prescreen.sh` enforces this.
 
 - Quote maintainer approval; never assert "approved" without a comment, label, or milestone as evidence.
 - Prefer issues with reproduction steps or acceptance criteria over vaguer higher-voted ones.
