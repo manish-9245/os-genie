@@ -94,11 +94,11 @@ the wrapper, which refuses on any mismatch:
 python3 scripts/check_pr_body.py <upstream/repo> --show-template   # see the real template (also pass any body path)
 # write /tmp/pr-body.md by filling that template, section by section
 git push -u origin <type>/<short-slug>
-bash scripts/open_pr.sh <upstream/repo> <fork-owner>:<branch> <base> "<type>(<scope>): <specific description>" /tmp/pr-body.md [--draft]
+bash scripts/open_pr.sh <upstream/repo> <fork-owner>:<branch> <base> "<type>(<scope>): <specific description>" /tmp/pr-body.md /tmp/evidence.md   # or: docs-only
 gh pr checks --watch
 ```
 
-`open_pr.sh` runs `check_pr_body.py` first. It blocks (exit 1) when a template
+`open_pr.sh` runs `check_evidence.py` (code needs local test evidence), then `check_pr_body.py`, then opens the PR and runs `cla_sign.py`. It blocks (exit 1) when a template
 heading is missing, empty, or out of order; when the repo mentions AI but the body has
 no disclosure; or when the agent ticked an attestation box ("I wrote this myself",
 "without relying on an AI", "tested on a live environment"). It stops with exit 3
@@ -111,6 +111,14 @@ the human `/tmp/pr-<n>-body.md` plus the understanding check
 
 Completion criterion: PR is green, single-concern, templated, and linked to the issue, ready for `os-genie-maintainer-comms` follow-ups.
 
+## Owner rules (non-negotiable, set 2026-10-16)
+
+1. Follow the repo's PR template AND contribution guidelines exactly, every time. Read CONTRIBUTING, the template and any AI policy before cloning.
+2. Write in the owner's plain voice. Say only what the template/guidelines need. Do not name the AI tool unless the repo asks (then one short line in its format). No em or en dashes.
+3. Code work is always local: clone, fix, run the real tests, and keep evidence (`scripts/evidence.sh`: a failing BEFORE run with the fix reverted, a passing AFTER run). `scripts/open_pr.sh` refuses a code diff without it. No evidence, no PR. There is no "open as draft because untested" fallback: if the toolchain is missing, report SKIPPED. Docs-only diffs are exempt.
+4. CLA: if the CLA bot is comment-based, post its exact signing phrase right after the PR opens (`scripts/cla_sign.py`, done by `open_pr.sh`) so the check is green before review. Any other CLA (web form, EasyCLA, PDF, line in the template) is never signed by the agent: it prints a clear prompt for the owner with the link.
+5. If the repo requires human-written text or a human to submit (numpy, uutils, fd), stop. Prepare the branch and the facts; the owner writes and posts. This is the one exception to rule 2, because passing agent text off as human-written breaks that repo's rules.
+
 ## Rules
 
 - Never force-push to upstream; never commit secrets. Scan the staged diff for `api_key|password|secret|token` assignments before pushing.
@@ -120,6 +128,7 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 ## References
 
 - Policy recon + disclosure + human-post gate: `references/policy-recon.md`
+- Evidence + CLA: `scripts/evidence.sh`, `scripts/check_evidence.py`, `scripts/cla_sign.py`
 - PR-body gate (template fidelity, disclosure, attestation, human-submit): `scripts/check_pr_body.py`, `scripts/open_pr.sh`
 - Checklist: `references/merge-checklist.md`
 - Evidence rules: `references/evidence-guide.md`
