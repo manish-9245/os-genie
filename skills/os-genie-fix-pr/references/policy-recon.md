@@ -35,7 +35,7 @@ torchgeo AGENTS.md, 2026-10-15.)
 |---|---|---|
 | RED | "No LLMs", "we don't accept AI-assisted PRs", ban on AI output anywhere | HARD DROP. No branch, no PR, no comment. Log and move on. |
 | YELLOW | No written policy, but recent AI closures or maintainer complaints | Proceed with the human-post gate (section 4); disclose only if the repo asks. Smallest possible diff. |
-| GREEN | Written policy allowing disclosed AI assistance (numpy/scipy-family style) | Proceed, follow the policy to the letter: template + disclosure + understanding. |
+| GREEN | Written policy allowing disclosed AI assistance (numpy/scipy-family style) | Proceed, follow the policy to the letter: template, the disclosure the policy asks for (nothing extra), understanding. |
 
 Classification goes in the PR notes and in progress.md. When in doubt
 between YELLOW and RED, pick RED.
@@ -46,9 +46,10 @@ numpy#33046 was closed on sight for ignoring the template. Rules:
 
 - If the repo has a PR template, fetch it and fill EVERY section. Empty
   sections are an annotated rejection pattern.
-- AI Disclosure section (numpy-style): name the tool(s), how they were
-  used (drafting, editing, tests), and exactly which hunks are
-  AI-generated vs human-written. If no AI was used, write that plainly.
+- If the template has an AI Disclosure section (numpy-style), answer it as
+  the template asks: tool(s), how used, which hunks. This applies only when
+  the repo's template or policy contains that question. Repos that do not ask
+  get no AI mention at all.
 - Never leave template HTML comments unfilled. Delete nothing, fill all.
 - First-time-contributor intro: 2-3 real sentences in the human's voice.
   The agent drafts it, the human approves it before submit.
@@ -66,7 +67,7 @@ comments on the author's behalf. So:
   must be performed by humans).
 - Default safe mode: agent pushes branch + writes `/tmp/pr-<n>-body.md`,
   human runs `gh pr create --body-file`. Downgrade to agent-created PRs
-  only on repos with no human-submission rule AND full disclosure in body.
+  only on repos with no human-submission rule, with any disclosure the repo asks for.
 
 ## 5. Understanding check (before any submit)
 

@@ -7,7 +7,7 @@ Every box must be checked before requesting review. Designed so a maintainer can
 - [ ] Policy recon done: repo classified GREEN/YELLOW, never RED (RED = dropped, no branch)
 - [ ] Repo PR template used and EVERY section filled (empty template sections close PRs on sight)
 - [ ] No em dashes or en dashes anywhere in the PR text or commits; no AI branding unless the repo asks for it
-- [ ] AI disclosure present ONLY where the repo's rules require it: tool(s), how used, which hunks AI-generated; human-submission repos use safe mode (agent pushes branch, human creates PR)
+- [ ] AI disclosure present ONLY where the repo's rules require it: in the repo's own format, as short as it allows; human-submission repos use safe mode (agent pushes branch, human creates PR)
 - [ ] Understanding check passed by the human: razor test per hunk, callers named, one honest uncertainty stated
 
 ## Scope (YAGNI)

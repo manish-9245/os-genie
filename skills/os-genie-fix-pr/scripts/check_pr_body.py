@@ -8,8 +8,9 @@ Exit 0 = body matches the repo's real PR template and policy; 1 = fix the body;
 Checks (all from the upstream repo, never from memory):
   1. Every heading of the repo's PR template is present in the body, in order,
      with real (non-comment, non-blank) content under it.
-  2. If the template/CONTRIBUTING/AI policy mentions AI, the body contains an
-     honest AI-assistance disclosure.
+  2. Only if the repo's own template/CONTRIBUTING/AI policy asks for AI
+     disclosure, the body contains a short one in the repo's format. No AI
+     branding is added anywhere else. No em or en dashes allowed.
   3. Attestation checkboxes ("I wrote this myself", "without relying on an AI",
      "tested on a live environment") are NOT ticked by the agent.
   4. Repos that require human submission/communication => exit 3.
