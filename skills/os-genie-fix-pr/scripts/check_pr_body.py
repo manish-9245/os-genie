@@ -121,6 +121,13 @@ def main():
         problems.append("the repo's rules ask for AI disclosure but the body has none (use the repo's own format, keep it short)")
     if not needs_disc and re.search(r"(Claude|Anthropic|AI[- ]assisted|AI assistance|assisted by AI|written with an? AI|generated with|on behalf of @|\bLLM\b)", strip_comments(body), re.I):
         problems.append("body mentions the AI tool but this repo does not ask for it: remove it (owner rule)")
+    # 2c. style: no semicolons in prose (code blocks and `inline code` are exempt)
+    prose = re.sub(r"```.*?```", "", strip_comments(body), flags=re.S)
+    prose = re.sub(r"`[^`\n]*`", "", prose)
+    prose = re.sub(r"https?://\S+", "", prose)
+    if ";" in prose:
+        ctx = next((l.strip()[:80] for l in prose.splitlines() if ";" in l), "")
+        problems.append(f"semicolon in prose (owner rule, only allowed inside code): ...{ctx}...")
     # 2b. style: no em/en dashes anywhere in the body
     if re.search("[\u2014\u2013]", body):
         problems.append("body contains an em dash or en dash: remove it (owner rule)")

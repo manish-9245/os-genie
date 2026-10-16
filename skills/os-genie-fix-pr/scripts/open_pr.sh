@@ -13,4 +13,10 @@ if [ $rc -ne 0 ]; then echo "STOPPED: fix the PR body and retry."; exit 1; fi
 case "$title$(cat "$body")" in *$'\xe2\x80\x94'*|*$'\xe2\x80\x93'*) echo "STOPPED: em/en dash in title"; exit 1;; esac
 url=$(gh pr create --repo "$repo" --head "$head" --base "$base" --title "$title" --body-file "$body" "$@") || exit 1
 echo "$url"
-python3 "$here/cla_sign.py" "$repo" "${url##*/}"   # posts the signing comment if the CLA is comment-based; else prompts the owner
+n=${url##*/}
+lg="$here/ledger.py"
+python3 "$lg" register "$repo#$n" --clone "$(pwd)" --evidence "$evidence" >/dev/null
+python3 "$lg" note "$repo#$n" "opened: $title" >/dev/null
+python3 "$here/cla_sign.py" "$repo" "$n"
+python3 "$lg" sync "$repo#$n" >/dev/null 2>&1; python3 "$lg" site >/dev/null 2>&1
+# after a PR is MERGED (and only then): python3 "$lg" cleanup --apply   (deletes that PR's local clone)   # posts the signing comment if the CLA is comment-based; else prompts the owner

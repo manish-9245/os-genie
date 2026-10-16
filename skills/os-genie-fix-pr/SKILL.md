@@ -114,10 +114,28 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 ## Owner rules (non-negotiable, set 2026-10-16)
 
 1. Follow the repo's PR template AND contribution guidelines exactly, every time. Read CONTRIBUTING, the template and any AI policy before cloning.
-2. Write in the owner's plain voice. Say only what the template/guidelines need. Do not name the AI tool unless the repo asks (then one short line in its format). No em or en dashes.
+2. Write in the owner's plain voice. Say only what the template/guidelines need. Do not name the AI tool unless the repo asks (then one short line in its format). No em or en dashes and no semicolons in prose (only inside code).
 3. Code work is always local: clone, fix, run the real tests, and keep evidence (`scripts/evidence.sh`: a failing BEFORE run with the fix reverted, a passing AFTER run). `scripts/open_pr.sh` refuses a code diff without it. No evidence, no PR. There is no "open as draft because untested" fallback: if the toolchain is missing, report SKIPPED. Docs-only diffs are exempt.
 4. CLA: if the CLA bot is comment-based, post its exact signing phrase right after the PR opens (`scripts/cla_sign.py`, done by `open_pr.sh`) so the check is green before review. Any other CLA (web form, EasyCLA, PDF, line in the template) is never signed by the agent: it prints a clear prompt for the owner with the link.
 5. If the repo requires human-written text or a human to submit (numpy, uutils, fd), stop. Prepare the branch and the facts; the owner writes and posts. This is the one exception to rule 2, because passing agent text off as human-written breaks that repo's rules.
+
+## Review loop (run at the start of every session and after every task)
+
+1. `python3 scripts/ledger.py all` then `python3 scripts/ledger.py inbox` (writes `~/oss-genie/inbox.md`). Also read `~/progress.md` and `~/oss-genie/notes.md` for context and open owner actions.
+2. For every item, act by its tag:
+   - **FIX** (changes requested, inline review comment, failing CI, merge conflict): work in the PR's local clone (re-clone the fork branch if it was deleted). Reproduce, change, re-run the tests and record new evidence with `scripts/evidence.sh`. Push to the PR's own branch (a rebase may need `--force-with-lease` on the fork branch only, never upstream). Keep commits and the PR text short and in the maintainers' requested style.
+   - **REPLY** (a maintainer asked something): answer the question asked, briefly, in the owner's plain voice, naming what changed and the commit. No AI mention, no thanks-padding. Post it with `gh pr comment` only where the repo allows agent replies. On repos that want human-written replies (the inbox marks them) write the draft to `~/oss-genie/drafts/` for the owner to post.
+   - **READ** (an acknowledgement, no action needed): note it and move on.
+   - **OWNER** (CLA, human-written replies, attestations): leave it, it shows in "Needs you" on the site.
+3. Merge blockers get the same treatment as reviews: conflicts rebase, red CI gets fixed or explained, a stale PR gets a short ping after 7 days of silence.
+4. `python3 scripts/ledger.py note owner/repo#N "what was done"` for each action, then `ledger.py inbox --mark` so handled items stop showing, then `ledger.py all`.
+5. After a PR is MERGED, run `ledger.py cleanup --apply` to delete only that PR's local clone.
+
+## Notes, site and cleanup (owner rules)
+
+- **Notes:** every PR is recorded in `~/oss-genie/ledger.json` and `~/oss-genie/notes.md` (clone path, evidence path, state changes, owner actions). `open_pr.sh` registers each PR automatically. Add context with `python3 scripts/ledger.py note owner/repo#123 "text"`. Run `ledger.py all` at the end of every task to refresh live state.
+- **Local site:** `python3 scripts/ledger.py serve` shows the ledger at http://localhost:8787 (needs-you list first, then one filterable table of PRs). It is a local page only. Nothing is published.
+- **Cleanup, merged only:** delete a project's local clone only after its PR is MERGED. `python3 scripts/ledger.py cleanup` lists what it would delete and `--apply` deletes, after re-checking the PR state live on GitHub. Open, draft and closed-unmerged PRs keep their clones, because the owner may still need to fix or reopen them.
 
 ## Rules
 
