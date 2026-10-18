@@ -8,6 +8,11 @@ Usage:
 
 Reads gh JSON (single object or list with one object) and prints a 0-100
 breakdown matching references/scoring-rubric.md. Stdlib only.
+
+Approval signals count only when they come from a maintainer: a comment whose
+authorAssociation is OWNER, MEMBER or COLLABORATOR. A "confirmed" or "go ahead"
+from anyone else is a contributor talking, not approval (incident 2026-10-18:
+only 2 of 46 issues scored 100 had a real maintainer confirmation).
 """
 import json
 import re
@@ -18,6 +23,7 @@ APPROVAL_LABELS = {"triaged", "confirmed", "accepted", "approved"}
 INVITE_LABELS = {"help wanted", "good first issue"}
 REJECT_LABELS = {"wontfix", "invalid", "duplicate"}
 
+MAINTAINER_ROLES = {"OWNER", "MEMBER", "COLLABORATOR"}
 MAINTAINER_PHRASES = [
     "confirmed", "repro confirmed", "good to go", "pr welcome",
     "accepting pr", "accepted", "go ahead",
@@ -77,20 +83,26 @@ def main():
         return 1
 
     # --- 1. Approval 0-35 ---
-    comment_text = " ".join(
-        (c.get("body", "") or "") for c in comments).lower()
-    maintainer_hit = any(p in comment_text for p in MAINTAINER_PHRASES)
+    maint = [c for c in comments
+             if (c.get("authorAssociation") or "").upper() in MAINTAINER_ROLES]
+    maint_text = " ".join((c.get("body", "") or "") for c in maint).lower()
+    maintainer_hit = any(p in maint_text for p in MAINTAINER_PHRASES)
     age_days = days_between(created, now) if created else 999
     upd_days = days_between(updated, now) if updated else 999
-    recent = upd_days <= 30
+    maint_dates = [parse_dt(c.get("createdAt")) for c in maint]
+    recent = any(d and days_between(d, now) <= 30 for d in maint_dates)
+    if comments and not any("authorAssociation" in c for c in comments):
+        print("note: comments carry no authorAssociation, approval from comments "
+              "cannot be verified: re-run gh issue view with the comments field",
+              file=sys.stderr)
     if maintainer_hit:
-        approval, why_a = 35, "maintainer confirm phrase in thread"
+        approval, why_a = 35, "maintainer (OWNER/MEMBER/COLLABORATOR) confirm phrase in thread"
     elif labels & APPROVAL_LABELS:
         approval, why_a = 25, "triaged/confirmed/accepted label or milestone"
     elif milestone:
         approval, why_a = 25, "milestone assigned"
     elif (labels & INVITE_LABELS) and recent:
-        approval, why_a = 18, "help-wanted + recent activity"
+        approval, why_a = 18, "help-wanted + maintainer reply <30d"
     elif labels & INVITE_LABELS:
         approval, why_a = 10, "beginner label only"
     else:

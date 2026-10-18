@@ -13,6 +13,8 @@ Checks (all from the upstream repo, never from memory):
      branding is added anywhere else. No em or en dashes allowed.
   3. Attestation checkboxes ("I wrote this myself", "without relying on an AI",
      "tested on a live environment") are NOT ticked by the agent.
+  3b. A testing checkbox in the repo's template ("I have tested these changes") must be
+     ticked, which means the tests were really run. Unticked = blocked.
   4. Repos that require human submission/communication => exit 3.
 Stdlib + gh only.
 """
@@ -32,8 +34,10 @@ AI_RE = re.compile(r"\b(AI|LLM|LLMs|Copilot|ChatGPT|Claude|generative)\b", re.I)
 DISC_RE = re.compile(
     r"((disclos|indicate|declare|mention|state|tell us|let us know|note)[^\n]{0,120}\b(AI|LLM|Copilot|ChatGPT|generative)\b|"
     r"\b(AI|LLM|Copilot|ChatGPT|generative)\b[^\n]{0,120}(disclos|must be (indicated|declared|mentioned)|should be (indicated|declared|mentioned)))", re.I)
+TEST_BOX_RE = re.compile(r"\b(tested|testing|ran (the )?tests?|run (the )?tests?|tests? (pass|added|run))\b", re.I)
 ATTEST_RE = re.compile(
-    r"(without relying on an? (AI|LLM)|i (wrote|authored)[^\n]{0,40}(myself|by hand)|human[- ]authored|"
+    r"(without relying on an? (AI|LLM)|without asking an? (AI|LLM)|i (wrote|authored)[^\n]{0,40}(myself|by hand)|"
+    r"human[- ]authored|explain (every|each) (line|change)|"
     r"tested (my changes )?on a live|reviewed every (line|change)|take full responsibility|"
     r"understand the (submitted )?changes)", re.I)
 
@@ -119,7 +123,7 @@ def main():
     needs_disc = any(DISC_RE.search(t) for t in rule_txts)
     if needs_disc and not re.search(r"(AI[- ]assisted|Claude|LLM|AI tool|generated with|written with)", strip_comments(body), re.I):
         problems.append("the repo's rules ask for AI disclosure but the body has none (use the repo's own format, keep it short)")
-    if not needs_disc and re.search(r"(Claude|Anthropic|AI[- ]assisted|AI assistance|assisted by AI|written with an? AI|generated with|on behalf of @|\bLLM\b)", strip_comments(body), re.I):
+    if not needs_disc and re.search(r"(Claude|AI[- ]assisted|AI assistance|assisted by AI|written with an? AI|AI[- ]generated|generated (with|by) an? AI|on behalf of @|by an? (AI|LLM)\b|\bLLM[- ](assisted|generated|written|authored)|\bAI tool\b)", strip_comments(body), re.I):
         problems.append("body mentions the AI tool but this repo does not ask for it: remove it (owner rule)")
     # 2c. style: no semicolons in prose (code blocks and `inline code` are exempt)
     prose = re.sub(r"```.*?```", "", strip_comments(body), flags=re.S)
@@ -136,6 +140,14 @@ def main():
     for line in body.splitlines():
         if re.match(r"\s*[-*]\s*\[[xX]\]", line) and ATTEST_RE.search(line):
             problems.append(f"agent ticked an attestation box it cannot truthfully give: {line.strip()[:90]}")
+
+    # 5. testing box: if the repo's template has one, the tests must have been run and the box ticked.
+    #    An unticked testing box gets PRs closed unread (freeCodeCamp, 2026-10-16).
+    if tmpl and any(re.match(r"\s*[-*]\s*\[ \]", l) and TEST_BOX_RE.search(l) for l in tmpl.splitlines()):
+        for line in body.splitlines():
+            if re.match(r"\s*[-*]\s*\[ \]", line) and TEST_BOX_RE.search(line) and not ATTEST_RE.search(line):
+                problems.append("template testing box is unticked: run the tests (scripts/evidence.sh), then tick it. "
+                                f"Never open the PR with it unticked: {line.strip()[:80]}")
 
     for n in notes: print("note:", n)
     if problems:

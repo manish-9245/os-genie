@@ -6,6 +6,7 @@
 set -uo pipefail
 repo=$1; head=$2; base=$3; title=$4; body=$5; evidence=$6; shift 6
 here=$(cd "$(dirname "$0")" && pwd)
+python3 "$here/check_caps.py" "$repo" || { echo "STOPPED: org cap."; exit 1; }
 python3 "$here/check_evidence.py" "$evidence" "upstream/${base}" || { echo "STOPPED: evidence gate. Fix and retest locally."; exit 1; }
 python3 "$here/check_pr_body.py" "$repo" "$body"; rc=$?
 if [ $rc -eq 3 ]; then echo "STOPPED: human-submit repo. Not creating the PR."; exit 3; fi

@@ -111,6 +111,11 @@ the human `/tmp/pr-<n>-body.md` plus the understanding check
 
 Completion criterion: PR is green, single-concern, templated, and linked to the issue, ready for `os-genie-maintainer-comms` follow-ups.
 
+## Burst and testing rules (set 2026-10-18)
+
+- **Org cap:** at most 2 PRs per upstream org per day. `open_pr.sh` runs `scripts/check_caps.py` and refuses the third. Ten PRs to freeCodeCamp in about an hour were each closed within 1 to 3 minutes, unread. Wait for a maintainer response before sending more to the same org. An override needs a stated reason in `OSG_CAP_OVERRIDE`.
+- **Testing box:** when the repo's PR template has a testing checkbox ("I have tested these changes"), run the project's tests or docs build first, record evidence, and tick it. `check_pr_body.py` blocks a body that leaves it unticked. Never open a PR with that box unticked or with a note that tests were skipped. If the toolchain is missing, report SKIPPED and do not open the PR.
+
 ## Owner rules (non-negotiable, set 2026-10-16)
 
 1. Follow the repo's PR template AND contribution guidelines exactly, every time. Read CONTRIBUTING, the template and any AI policy before cloning.

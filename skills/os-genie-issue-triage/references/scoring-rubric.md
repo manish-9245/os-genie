@@ -14,6 +14,8 @@ Total 100 points. Score each dimension, sum, recommend only on >= 60.
 
 Evidence rule: copy the comment URL or label name into the report. "Approved" without a pointer scores 0.
 
+Who counts as a maintainer: only comments whose `authorAssociation` is `OWNER`, `MEMBER` or `COLLABORATOR`. A "confirmed" or "go ahead" from `NONE` or `CONTRIBUTOR` is not approval, and `score_issue.py` ignores it. Re-check by hand before claiming: `gh issue view <n> --repo <o/r> --json comments --jq '.comments[]|[.author.login,.authorAssociation]|@tsv'`.
+
 Why this weight: agentic-PR failure studies show incorrect-implementation and wrong-scope rejections cluster where no maintainer confirmed scope first (MSR 2026 failure taxonomy, n=600 annotated rejections). Approval is the single strongest merge predictor available before coding.
 
 ## 2. Scope clarity: 25 pts
