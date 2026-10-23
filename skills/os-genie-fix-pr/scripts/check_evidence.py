@@ -27,6 +27,10 @@ problems = []
 if not after_ok: problems.append("no AFTER block with exit=0 (tests must pass with the fix applied)")
 if not before_fail and not re.search(r"^NO-BEFORE:\s*\S+", ev, re.M):
     problems.append("no BEFORE block with a failing exit, and no 'NO-BEFORE: <reason>' line")
+hc = re.findall(r"^## HUNK-CHECK[^\n]*\n\$[^\n]*\nuncovered=(\d+)", ev, re.M)
+waivers = len(re.findall(r"^HUNK-WAIVER:\s*\S+", ev, re.M))
+if not hc: problems.append("no HUNK-CHECK block: run scripts/hunk_check.py (every source hunk must be needed by a test)")
+elif int(hc[-1]) > waivers: problems.append(f"HUNK-CHECK left {hc[-1]} uncovered hunk(s) with {waivers} HUNK-WAIVER line(s): add a test that fails without each hunk, or delete the hunk")
 if problems:
     print("BLOCKED: test evidence is incomplete:"); [print(" -", p) for p in problems]
     print("Record it with scripts/evidence.sh before|after <file> -- <cmd>. No evidence, no PR (no draft fallback)."); sys.exit(1)

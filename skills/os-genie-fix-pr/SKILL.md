@@ -74,6 +74,16 @@ Each additional failed CI check cuts merge odds ~15%; not-merged agentic PRs ske
 2. Run the project's full relevant suite + linter locally; paste commands + results.
 3. Push and verify CI green via `gh pr checks`. Fix every red check before requesting review. Never ask a maintainer to review a red PR.
 
+#### 3b. Trace the whole path, then prove every hunk (added after utopia#1380 lost to #1381)
+
+utopia#1380 fixed 4 error sites, missed a 5th (the class lookup that also swallowed the error), and its test never reached 3 of its 4 hunks while the PR body claimed it did. A rival PR with the complete fix won. Three mandatory steps:
+
+1. **Swallow-site audit (error-propagation and "X silently ignored" fixes).** Before editing, list every site between the entry point and the failing call that catches, logs-and-continues, `.ok()`s, defaults, or `unwrap_or`s the error (`grep -n "Err(\|\.ok()\|unwrap_or\|continue\|warn" <files on the path>`, then follow each callee one level down). Put the list in the evidence file as `SITES:` lines with covered/not-covered. A site you leave alone needs a one-line reason in the PR body.
+2. **Make the test reach the code.** For each branch the test claims to exercise, assert it ran (a counter, a mock call count, an `embed_calls() > 0`). A fixture that cannot reach the branch (for example a threshold the fixture never crosses) must be fixed or the claim dropped.
+3. **Per-hunk mutation check.** Commit the fix, then run `python3 scripts/hunk_check.py <upstream/base> <evidence> -- <focused test cmd>`. It reverts each source hunk alone and demands a test failure. `uncovered=0` is required by `check_evidence.py`; otherwise add a test, delete the hunk, or record `HUNK-WAIVER: file:line reason` and list it under "Not covered by tests" in the PR body.
+
+The PR body may only claim coverage the hunk check proved. No "covers X" for an X without a failing-without-it test.
+
 ### 4. Evidence pack (screenshots where it matters)
 
 - UI change: before/after screenshots or short clip, attached to the PR.
@@ -145,6 +155,10 @@ Completion criterion: PR is green, single-concern, templated, and linked to the 
 ## Claims (owner rule: track them)
 
 Issues where the owner asked to work on them are tracked with `python3 scripts/ledger.py claims` (it is part of `ledger.py all`). It records each one as Assigned to me, Waiting for a reply, No answer for N days, Taken by someone else, PR sent, or Issue closed. Check the list in the review loop: a claim with no answer after 14 days gets one short follow-up from the owner (not the agent), a claim taken by someone else is dropped, and `ledger.py drop-claim owner/repo#N "reason"` retires a claim that no longer matters. The agent never posts a claim comment on its own. Claims follow `os-genie-issue-triage/references/claim-guide.md` (approval first, daily and per-org caps).
+
+## Competitor recheck (added 2026-10-23)
+
+`open_pr.sh` runs `check_competitors.py` immediately before opening: any other PR (open, or merged/closed within 14 days) that mentions the same `Fixes #N` blocks the open. Triage-time checks go stale in hours (utopia#1381 appeared 5 hours after #1380). If blocked, comment on the existing PR with what it misses instead of opening a rival. When a maintainer says "happy to take a PR", still finish the swallow-site audit first: a maintainer-invited issue attracts rivals quickly, and completeness decides who wins.
 
 ## Rules
 
