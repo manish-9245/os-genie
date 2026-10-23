@@ -46,9 +46,20 @@ def pr_state(repo, n, login):
            "title,state,isDraft,mergedAt,closedAt,updatedAt,url,reviewDecision,statusCheckRollup,comments,additions,deletions,headRefName")
     if r.returncode: return None
     d = json.loads(r.stdout)
-    failing = sorted({c.get("name") or c.get("context") for c in d.get("statusCheckRollup") or []
+    # Group by check name/context and keep only the latest run per check.
+    # statusCheckRollup retains history (e.g. old FAILURE + new SUCCESS for
+    # the same check), so counting any FAILURE would mark fixed PRs as failing.
+    latest = {}
+    for c in d.get("statusCheckRollup") or []:
+        k = c.get("name") or c.get("context") or ""
+        ts = c.get("completedAt") or c.get("startedAt") or ""
+        prev = latest.get(k)
+        prev_ts = (prev.get("completedAt") or prev.get("startedAt") or "") if prev else ""
+        if prev is None or ts >= prev_ts:
+            latest[k] = c
+    failing = sorted({k for k, c in latest.items()
                       if (c.get("conclusion") or c.get("state")) in ("FAILURE", "ERROR", "TIMED_OUT")
-                      and not any(x in (c.get("name") or c.get("context") or "").lower() for x in NOISE_CHECKS)})
+                      and not any(x in k.lower() for x in NOISE_CHECKS)})
     cla = "n/a"
     last_other = None
     for c in d.get("comments") or []:
@@ -150,7 +161,15 @@ def cmd_inbox(mark):
         if v.returncode == 0:
             vv = json.loads(v.stdout)
             if vv.get("mergeable") == "CONFLICTING": items.append({"kind": "merge_conflict", "by": "", "at": now()[:10], "text": "Branch conflicts with base. Rebase in the local clone.", "action": "FIX"})
-            bad = sorted({c.get("name") or c.get("context") for c in vv.get("statusCheckRollup") or [] if (c.get("conclusion") or c.get("state")) in ("FAILURE", "ERROR", "TIMED_OUT")})
+            latest = {}
+            for c in vv.get("statusCheckRollup") or []:
+                k2 = c.get("name") or c.get("context") or ""
+                ts = c.get("completedAt") or c.get("startedAt") or ""
+                prev = latest.get(k2)
+                prev_ts = (prev.get("completedAt") or prev.get("startedAt") or "") if prev else ""
+                if prev is None or ts >= prev_ts:
+                    latest[k2] = c
+            bad = sorted({k2 for k2, c in latest.items() if (c.get("conclusion") or c.get("state")) in ("FAILURE", "ERROR", "TIMED_OUT")})
             bad = [b for b in bad if b and not any(x in b.lower() for x in ("cla", "vercel", "netlify", "codecov"))]
             if bad: items.append({"kind": "ci_failing", "by": "", "at": now()[:10], "text": "Failing: " + ", ".join(bad[:4]), "action": "FIX"})
         if e.get("cla") == "unsigned": items.append({"kind": "cla", "by": "", "at": now()[:10], "text": "CLA unsigned", "action": "OWNER"})
@@ -283,6 +302,7 @@ def cmd_publish(deploy):
     dist = PUBLIC_DIR / "dist"
     if not PUBLIC_DIR.exists(): sys.exit("~/oss-progress-site not found")
     for old in dist.glob("*"):
+        if old.name in ("_headers", "stars.json"): continue  # CORS for buildwithmanish.com and the daily stars file
         shutil.rmtree(old) if old.is_dir() else old.unlink()
     write_site(dist); print("copied to", dist)
     if not deploy: print("not deployed. Log in once with: npx wrangler login   then: ledger.py publish --deploy"); return
